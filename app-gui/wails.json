@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Orcaton",
+  "outputfilename": "orcaton-gui",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Athlon1323"
+  },
+  "info": {
+    "companyName": "Orcaton",
+    "productName": "Orcaton",
+    "productVersion": "0.0.45",
+    "copyright": "Copyright 2026 Athlon1323. Apache License 2.0",
+    "comments": "Multicam audio sync (FCP7 XML, DRT)"
+  }
+}

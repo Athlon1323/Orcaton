@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Orcaton
+GenericName=Multicam Audio Sync
+Comment=Sync multicam video and audio by sound (FCP7 XML, DRT)
+Exec=orcaton-gui
+Icon=orcaton
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+Keywords=sync;multicam;audio;timeline;xml;drt;
+StartupWMClass=orcaton

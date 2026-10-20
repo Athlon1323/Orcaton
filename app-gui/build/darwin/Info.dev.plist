@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleName</key>
+        <string>{{.Info.ProductName}}</string>
+        <key>CFBundleDisplayName</key>
+        <string>{{.Info.ProductName}}</string>
+        <key>CFBundleExecutable</key>
+        <string>{{.OutputFilename}}</string>
+        <key>CFBundleIdentifier</key>
+        <string>io.github.athlon1323.orcaton</string>
+        <key>CFBundleVersion</key>
+        <string>{{.Info.ProductVersion}}</string>
+        <key>CFBundleShortVersionString</key>
+        <string>{{.Info.ProductVersion}}</string>
+        <key>CFBundleGetInfoString</key>
+        <string>{{xml .Info.Comments}}</string>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>en</string>
+        <key>CFBundleIconFile</key>
+        <string>iconfile</string>
+        <key>LSMinimumSystemVersion</key>
+        <string>12.0.0</string>
+        <key>LSApplicationCategoryType</key>
+        <string>public.app-category.video</string>
+        <key>NSHighResolutionCapable</key>
+        <string>true</string>
+        <key>NSHumanReadableCopyright</key>
+        <string>{{xml .Info.Copyright}}</string>
+        <key>NSDocumentsFolderUsageDescription</key>
+        <string>Orcaton reads the timelines and media files you choose.</string>
+        <key>NSDesktopFolderUsageDescription</key>
+        <string>Orcaton reads the timelines and media files you choose.</string>
+        <key>NSDownloadsFolderUsageDescription</key>
+        <string>Orcaton reads the timelines and media files you choose.</string>
+        <key>NSRemovableVolumesUsageDescription</key>
+        <string>Orcaton reads media files from the drives you choose.</string>
+        <key>NSNetworkVolumesUsageDescription</key>
+        <string>Orcaton reads media files from the network folders you choose.</string>
+        <key>NSAppTransportSecurity</key>
+        <dict>
+            <key>NSAllowsLocalNetworking</key>
+            <true/>
+        </dict>
+    </dict>
+</plist>

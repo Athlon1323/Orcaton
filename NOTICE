@@ -1,0 +1,10 @@
+Orcaton
+Copyright 2026 Athlon1323
+
+This product includes software developed by The Go Authors: the packages
+golang.org/x/text/unicode/norm and golang.org/x/text/transform, copied into
+app-go/internal/third_party and licensed under the BSD 3-Clause License
+(see app-go/internal/third_party/LICENSE-golang-x-text).
+
+Third-party components compiled into or bundled with Orcaton programs, and
+their licenses, are listed in THIRD-PARTY-NOTICES.md.

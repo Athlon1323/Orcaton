@@ -1,0 +1,27 @@
+# Orcaton — build outputs and local data (never committed)
+app-go/bin/
+app-go/dist/
+app-gui/build/bin/
+app-gui/frontend/node_modules/
+app-gui/frontend/dist/*
+!app-gui/frontend/dist/.gitkeep
+app-gui/frontend/dist-mock/
+app-gui/frontend/package.json.md5
+app-gui/frontend/wailsjs/
+*.log
+
+# Timelines, reports, audio features and media — keep them out of the repository
+*.drt
+*.xml
+*.fcpxml
+*.npz
+*.npy
+*.csv
+*.wav
+*.mov
+*.mp4
+*.mts
+*.mxf
+*.m4a
+*.aac
+*.mp3

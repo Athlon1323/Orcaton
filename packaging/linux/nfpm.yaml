@@ -1,0 +1,111 @@
+name: orcaton
+arch: ${ORCATON_ARCH}
+platform: linux
+version: ${ORCATON_VERSION}
+version_schema: none
+release: 1
+section: video
+priority: optional
+maintainer: Athlon1323 <Athlon1323@users.noreply.github.com>
+vendor: Athlon1323
+license: Apache-2.0
+description: |-
+  Multicam audio sync for video editors.
+  Orcaton lines up video and audio files from several cameras and recorders
+  by their sound and saves the timeline back (FCP7 XML, DRT): a desktop window
+  and the orcaton command for the terminal. FFmpeg is used as an external program.
+
+overrides:
+  deb:
+    depends:
+      - libgtk-3-0t64 | libgtk-3-0
+      - libwebkit2gtk-4.1-0
+      - ffmpeg
+  rpm:
+    depends:
+      - libgtk-3.so.0()(64bit)
+      - libwebkit2gtk-4.1.so.0()(64bit)
+      - /usr/bin/ffmpeg
+
+contents:
+  - src: app-gui/build/bin/orcaton-gui
+    dst: /usr/bin/orcaton-gui
+    file_info:
+      mode: 0755
+  - src: app-gui/build/bin/orcaton
+    dst: /usr/bin/orcaton
+    file_info:
+      mode: 0755
+  - src: packaging/linux/orcaton.desktop
+    dst: /usr/share/applications/orcaton.desktop
+    file_info:
+      mode: 0644
+  - src: packaging/linux/icons/orcaton-48.png
+    dst: /usr/share/icons/hicolor/48x48/apps/orcaton.png
+    file_info:
+      mode: 0644
+  - src: packaging/linux/icons/orcaton-64.png
+    dst: /usr/share/icons/hicolor/64x64/apps/orcaton.png
+    file_info:
+      mode: 0644
+  - src: packaging/linux/icons/orcaton-128.png
+    dst: /usr/share/icons/hicolor/128x128/apps/orcaton.png
+    file_info:
+      mode: 0644
+  - src: packaging/linux/icons/orcaton-256.png
+    dst: /usr/share/icons/hicolor/256x256/apps/orcaton.png
+    file_info:
+      mode: 0644
+  - src: packaging/linux/icons/orcaton-512.png
+    dst: /usr/share/icons/hicolor/512x512/apps/orcaton.png
+    file_info:
+      mode: 0644
+  - src: packaging/linux/copyright
+    dst: /usr/share/doc/orcaton/copyright
+    packager: deb
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/doc/orcaton/LICENSE
+    packager: deb
+    file_info:
+      mode: 0644
+  - src: NOTICE
+    dst: /usr/share/doc/orcaton/NOTICE
+    packager: deb
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/licenses/orcaton/LICENSE
+    type: license
+    packager: rpm
+    file_info:
+      mode: 0644
+  - src: NOTICE
+    dst: /usr/share/licenses/orcaton/NOTICE
+    type: license
+    packager: rpm
+    file_info:
+      mode: 0644
+  - src: THIRD-PARTY-NOTICES.md
+    dst: /usr/share/doc/orcaton/THIRD-PARTY-NOTICES.md
+    packager: deb
+    file_info:
+      mode: 0644
+  - src: THIRD-PARTY-NOTICES.md
+    dst: /usr/share/doc/orcaton/THIRD-PARTY-NOTICES.md
+    type: doc
+    packager: rpm
+    file_info:
+      mode: 0644
+  - src: VERSION
+    dst: /usr/share/doc/orcaton/VERSION
+    packager: deb
+    file_info:
+      mode: 0644
+  - src: VERSION
+    dst: /usr/share/doc/orcaton/VERSION
+    type: doc
+    packager: rpm
+    file_info:
+      mode: 0644

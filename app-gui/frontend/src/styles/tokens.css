@@ -1,0 +1,12 @@
+:root {
+  --bg: #1b1c1e; --panel: #202225; --card: #26282b; --track-head: #1f2123;
+  --line: #2e3134; --line-2: #34373b; --line-3: #4a4e53; --chip: #2c2f32;
+  --text: #e6e9e8; --text-2: #c9cfcd; --muted: #9aa3a1; --muted-2: #8b9391;
+  --green: #3ed389; --teal: #4cc3bd; --amber: #e0a93b; --rose: #e86a85; --gray: #6a6f75; --offline: #8a9096;
+  --nav-active: #25332d; --on-green: #0c1d14;
+  --track-w: 190px;
+  --side-w: 280px;
+  --font: 'Manrope Variable', 'Manrope', 'Noto Sans Georgian Variable', 'Noto Sans Georgian', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  color-scheme: dark;
+}
