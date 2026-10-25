@@ -3,10 +3,15 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $Dest = Join-Path $env:LOCALAPPDATA "Programs\Orcaton"
 $RegKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton"
-$Data = @((Join-Path $env:APPDATA "orcaton"), (Join-Path $env:LOCALAPPDATA "orcaton"))
+$Data = @((Join-Path $env:APPDATA "orcaton"), (Join-Path $env:LOCALAPPDATA "orcaton"),
+          (Join-Path $env:APPDATA "orcaton-gui.exe"))
 
 if (-not (Test-Path (Join-Path $Dest "orcaton-gui.exe")) -and -not (Test-Path $RegKey)) {
-    Write-Host "Orcaton не установлен ($Dest)."; exit 0
+    Write-Host "Orcaton не установлен ($Dest)."
+    if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton") {
+        Write-Host "Установка из .exe (Program Files) удаляется через «Параметры → Приложения → Orcaton»."
+    }
+    exit 0
 }
 if (-not $Yes) {
     $what = if ($Purge) { "программу, ярлыки, настройки и кэш" } else { "программу и ярлыки (настройки и кэш останутся)" }
@@ -30,9 +35,20 @@ foreach ($it in $items) {
             }
         }
         "path" {
-            $parts = @(([Environment]::GetEnvironmentVariable("Path", "User") -split ";") | Where-Object { $_ -and $_ -ne $val })
-            [Environment]::SetEnvironmentVariable("Path", ($parts -join ";"), "User")
-            Write-Host "PATH: убрано $val"
+            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Environment")
+            try {
+                $n = $k.GetValueNames() | Where-Object { $_ -ieq "Path" } | Select-Object -First 1
+                if ($n) {
+                    $old = [string]$k.GetValue($n, "", [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+                    $parts = @($old -split ";" | Where-Object { $_.Trim().TrimEnd('\') -ine $val })
+                    if ($parts.Count -ne @($old -split ";").Count) {
+                        $k.SetValue($n, ($parts -join ";"), $k.GetValueKind($n))
+                        [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", "1", "User")
+                        [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", $null, "User")
+                        Write-Host "PATH: убрано $val"
+                    }
+                }
+            } finally { $k.Close() }
         }
         "registry" { if ($val -eq $RegKey -and (Test-Path $val)) { Remove-Item -Recurse -Force $val; Write-Host "«Приложения»: запись удалена" } }
     }

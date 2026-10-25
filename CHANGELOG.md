@@ -2,6 +2,12 @@
 
 Versions follow `MAJOR.MINOR.PATCH`; the single source of the version is the file [VERSION](VERSION).
 
+## 0.0.46 — 2026-10-26
+
+* Windows installer (`.exe`, x64 and arm64): installs for all users into Program Files, asks for the folder, adds `orcaton` to the system PATH, and removes the old per-user copy.
+* Linux packages (`.deb`, `.rpm`) and macOS `.dmg` build scripts; FFmpeg is not a package dependency.
+* Uninstall also removes the window's WebView2 data.
+
 ## 0.0.45 — 2026-10-20 — first alpha
 
 First build for alpha testing (not published yet).

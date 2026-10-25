@@ -13,8 +13,25 @@ if ($env:ProgramFiles -and $Root.StartsWith($env:ProgramFiles, [StringComparison
 
 function Have($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 function Step($text) { Write-Host "`n== $text ==" -ForegroundColor Cyan }
-function UserPath { @(([Environment]::GetEnvironmentVariable("Path", "User") -split ";") | Where-Object { $_ }) }
-function Set-UserPath($parts) { [Environment]::SetEnvironmentVariable("Path", ($parts -join ";"), "User") }
+function RegPath {
+    $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Environment")
+    try {
+        $n = $k.GetValueNames() | Where-Object { $_ -ieq "Path" } | Select-Object -First 1
+        if (-not $n) { return @{ Name = "Path"; Text = ""; Kind = [Microsoft.Win32.RegistryValueKind]::ExpandString } }
+        return @{ Name = $n; Kind = $k.GetValueKind($n)
+                  Text = [string]$k.GetValue($n, "", [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) }
+    } finally { $k.Close() }
+}
+function UserPath { @(((RegPath).Text -split ";") | Where-Object { $_ }) }
+function Set-UserPath($parts) {
+    $cur = RegPath
+    $new = (@($parts) -join ";")
+    if ($new -ceq (@($cur.Text -split ";" | Where-Object { $_ }) -join ";")) { return }
+    $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Environment")
+    try { $k.SetValue($cur.Name, $new, $cur.Kind) } finally { $k.Close() }
+    [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", "1", "User")
+    [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", $null, "User")
+}
 function Show($name, $ok, $info) {
     if ($ok) { Write-Host ("[OK] {0,-12} {1}" -f $name, $info) -ForegroundColor Green }
     else     { Write-Host ("[--] {0,-12} {1}" -f $name, $info) -ForegroundColor Yellow }
@@ -82,10 +99,17 @@ if ($LASTEXITCODE -ne 0) { throw "сборка не удалась" }
 $Bin = Join-Path $Root "app-gui\build\bin"
 
 Step "3/3 Установка в $Dest"
+$MachineKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton"
+if (Test-Path $MachineKey) {
+    $loc = (Get-ItemProperty -Path $MachineKey -ErrorAction SilentlyContinue).InstallLocation
+    Write-Host "Внимание: Orcaton уже установлен установщиком .exe ($loc). Это будет вторая копия (для пользователя);" -ForegroundColor Yellow
+    Write-Host "команда orcaton в терминале — из Program Files (системный PATH раньше). Удалить ту: «Параметры → Приложения → Orcaton»." -ForegroundColor Yellow
+}
 if (Get-Process -Name "orcaton-gui" -ErrorAction SilentlyContinue) { throw "Orcaton сейчас открыт — закройте окно и повторите" }
 New-Item -ItemType Directory -Force -Path $Dest | Out-Null
 Get-ChildItem $Bin -Force | Copy-Item -Destination $Dest -Recurse -Force
 Copy-Item -Force (Join-Path $PSScriptRoot "uninstall.ps1") $Dest
+Remove-Item -Force (Join-Path $Dest "uninstall.exe") -ErrorAction SilentlyContinue
 $exe = Join-Path $Dest "orcaton-gui.exe"
 $made = @()
 $start = Join-Path ([Environment]::GetFolderPath("Programs")) "Orcaton.lnk"
@@ -100,6 +124,7 @@ Set-UserPath $parts
 if (-not $NoPath) { $made += "path=$Dest" }
 if (Test-Path $OldCli) { Remove-Item -Recurse -Force $OldCli -ErrorAction SilentlyContinue }
 $size = [int]((Get-ChildItem $Dest -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
+if (Test-Path $RegKey) { Remove-Item -Recurse -Force $RegKey }
 New-Item -Path $RegKey -Force | Out-Null
 $props = @{ DisplayName = "Orcaton"; DisplayVersion = $Version; Publisher = "Athlon1323"; InstallLocation = $Dest;
     DisplayIcon = "$exe,0"; NoModify = 1; NoRepair = 1; EstimatedSize = $size;

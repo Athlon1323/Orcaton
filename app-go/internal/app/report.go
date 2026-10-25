@@ -10,7 +10,7 @@ import (
 	"orcaton/internal/pyio"
 )
 
-const Version = "0.0.45"
+const Version = "0.0.46"
 
 type Partner struct {
 	Name               string

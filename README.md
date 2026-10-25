@@ -50,21 +50,6 @@ if it is missing (on Windows — the window only).
 Only Orcaton itself is removed (program, shortcuts, the `orcaton` command). Go, Node.js, Wails and
 FFmpeg stay — other programs may use them. `-Purge` / `--purge` also removes settings and the audio cache.
 
-## Build installer packages
-
-For maintainers: ready-to-install packages are built from this folder with the scripts in `packaging/`.
-The build tools (Go, Node.js, Wails; macOS — Xcode Command Line Tools; Linux — the window libraries) are
-installed by running the installer once: `bash scripts/install.sh`.
-
-| Package | Build on | Command (in the project folder) | Result in `app-gui/build/bin/` |
-|---|---|---|---|
-| macOS `.dmg` (Apple Silicon + Intel) | a Mac | `bash packaging/macos/make-dmg.sh` | `Orcaton-<version>-macos-universal.dmg` + `.sha256` |
-| Linux `.deb` + `.rpm` | Ubuntu 22.04 (x86-64; arm64 — on an ARM machine) | `bash packaging/linux/make-packages.sh` | `orcaton_<version>-1_amd64.deb`, `orcaton-<version>-1.x86_64.rpm` + `.sha256` |
-
-Packages are not signed (first launch on macOS: System Settings → Privacy & Security → Open Anyway). FFmpeg is
-not included: the Linux packages install the distribution's FFmpeg as a dependency, on macOS the window offers
-**Install FFmpeg**. Installing the packages — [docs/quickstart.md](docs/quickstart.md).
-
 ## Use
 
 The window: open a timeline → **Synchronize** → **Save**. Guide — [docs/gui/user.md](docs/gui/user.md)
@@ -86,7 +71,6 @@ Full reference (in Russian) — [docs/go/usage.md](docs/go/usage.md); the engine
 app-go/    engine and the orcaton command (Go, no external dependencies)
 app-gui/   desktop window (Wails v2 + Svelte 5 / TypeScript)
 scripts/   install, uninstall, set-version
-packaging/ installer packages: macOS .dmg, Linux .deb / .rpm
 docs/      user guides
 ```
 

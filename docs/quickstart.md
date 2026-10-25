@@ -46,6 +46,27 @@ installed again.
    **Orcaton** shortcut is now on the desktop and in the Start menu; you can close the terminal. From now
    on — just the shortcut.
 
+### Windows: ready-made installer (.exe)
+If you received Orcaton as a file `Orcaton-<version>-windows-x64-setup.exe` (most PCs) or
+`Orcaton-<version>-windows-arm64-setup.exe` (Windows on ARM, for example Snapdragon laptops), nothing needs
+to be built: Go, Node.js and Wails are not needed. Windows 10 or 11.
+1. **Run the installer** (double-click). Orcaton is free and is not signed with a paid certificate, so
+   Windows may show "Windows protected your PC" → **More info** → **Run anyway**. Then Windows asks
+   "Do you want to allow this app to make changes to your device?" → **Yes** (administrator rights: Orcaton is
+   installed for all users of the computer).
+2. **Options:** *Add the orcaton command to PATH* and *Desktop shortcut* (both on); the Start menu
+   shortcut is always created (for all users).
+3. **Folder:** `C:\Program Files\Orcaton` by default; **Browse…** — another folder. On the last page — *Run Orcaton*.
+4. **FFmpeg.** If the window shows **FFmpeg is not installed** — press **Install FFmpeg** (it uses winget).
+
+* Update — run the new installer (close Orcaton first; the installer asks if it is still open). Settings stay.
+* An earlier copy of Orcaton for your user only (`%LOCALAPPDATA%\Programs\Orcaton` — an older installer or
+  `scripts\install.ps1`) is removed by the installer automatically; settings stay — nothing to remove by hand.
+* Check the downloaded file: in PowerShell `(Get-FileHash Orcaton-…-setup.exe).Hash` must print the same value
+  as the `.sha256` file next to it (upper / lower case does not matter).
+* With **Smart App Control** turned on (Windows 11), unsigned programs do not start at all; Orcaton then works
+  only with it turned off (Windows Security → App & browser control → Smart App Control).
+
 ## macOS (Apple Silicon and Intel)
 1. **Homebrew** (a package manager; skip if you already have it). Open **Terminal** (Spotlight:
    ⌘ + Space → "Terminal") and run the command from <https://brew.sh> (one line, it asks for your Mac
@@ -95,18 +116,21 @@ Fedora and Arch — the same command (the script uses `dnf` / `pacman`).
 
 ### Linux: ready-made package (.deb / .rpm)
 If you received Orcaton as a package file, nothing needs to be built. The package manager installs Orcaton
-together with everything it needs: the window libraries (GTK 3, WebKitGTK 4.1) and **FFmpeg** from your
-distribution (FFmpeg stays a separate package under its own license). Open a terminal in the folder with
-the file and run (asks for your password):
+together with the window libraries (GTK 3, WebKitGTK 4.1); on a desktop system they are usually already
+there, so the package also installs without internet. **FFmpeg** is not part of the package (as on macOS):
+install it from your distribution afterwards — see below. Open a terminal in the folder with the file and
+run (asks for your password):
 
 | System | File | Command |
 |---|---|---|
-| Ubuntu 22.04 / 24.04, Debian 12, Linux Mint 21+ | `orcaton_<version>-1_amd64.deb` | `sudo apt install ./orcaton_<version>-1_amd64.deb` |
+| Ubuntu 22.04 / 24.04 / 26.04, Debian 12, Linux Mint 21+ | `orcaton_<version>-1_amd64.deb` | `sudo apt install ./orcaton_<version>-1_amd64.deb` |
 | Fedora 39 or newer | `orcaton-<version>-1.x86_64.rpm` | `sudo dnf install ./orcaton-<version>-1.x86_64.rpm` |
 
 * `./` at the beginning of the file name is needed — otherwise apt / dnf looks for the package online.
 * Orcaton is not signed: if dnf refuses because of a missing signature, add `--nogpgcheck` to the command.
 * After that: applications menu → **Orcaton**; in a terminal — the `orcaton` command.
+* **FFmpeg:** on the first start the window shows **FFmpeg is not installed** with the command → **Install FFmpeg**
+  (asks for your password; needs internet). Or in a terminal: `sudo apt install ffmpeg` (Fedora: `sudo dnf install /usr/bin/ffmpeg`).
 * If Orcaton was installed earlier with `bash scripts/install.sh`, remove that copy first:
   `bash scripts/uninstall.sh` — otherwise the menu keeps opening the old one.
 * Update — the same command with the new file. Check the downloaded file: `sha256sum -c <file>.sha256`.
@@ -137,6 +161,7 @@ copy (close the Orcaton window first). Settings stay.
 | OS | How |
 |---|---|
 | Windows | Settings → Apps → **Orcaton** → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` |
+| Windows, from the `.exe` | Settings → Apps → **Orcaton** → Uninstall; tick *Also remove settings and cache* to delete them as well |
 | macOS / Linux | `bash scripts/uninstall.sh` |
 | Linux, from the `.deb` / `.rpm` | `sudo apt remove orcaton` / `sudo dnf remove orcaton`; FFmpeg and the libraries stay, settings — in `~/.config/orcaton` |
 | macOS, from the `.dmg` | About → **Remove command-line tool** (if installed), then drag Orcaton from Applications to the Trash; settings stay in `~/Library/Application Support/orcaton` |
@@ -153,6 +178,7 @@ cache.
 | `не найдено: go / node` ("not found") or `… not recognized` after installation | close the terminal, open a **new** one in the project folder and repeat the command (PATH gets refreshed) |
 | the window opens white / empty (Windows 10) | the WebView2 engine is missing: `winget install Microsoft.EdgeWebView2Runtime`, then the shortcut again |
 | the window shows **FFmpeg is not installed** | press **Install FFmpeg** in that window (or run the shown command in a terminal), then **Check again** |
+| Windows: "Windows protected your PC" when starting the installer | **More info** → **Run anyway** (Orcaton is not signed with a paid certificate) |
 | macOS: "Apple could not verify…", "cannot be opened because the developer cannot be verified" | System Settings → Privacy & Security → **Open Anyway** (macOS 12–14: right-click Orcaton → Open → Open) — see "macOS: ready-made package" |
 | macOS: "Orcaton is damaged and can't be opened" | download the `.dmg` again and check `shasum -a 256`; if the value matches and the message repeats — Terminal: `xattr -dr com.apple.quarantine /Applications/Orcaton.app` |
 | Ubuntu: `libwebkit2gtk-4.1` not found | Ubuntu older than 22.04 is not supported: 22.04 or newer is needed |

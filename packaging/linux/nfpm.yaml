@@ -3,7 +3,7 @@ arch: ${ORCATON_ARCH}
 platform: linux
 version: ${ORCATON_VERSION}
 version_schema: none
-release: 1
+release: ${ORCATON_RELEASE}
 section: video
 priority: optional
 maintainer: Athlon1323 <Athlon1323@users.noreply.github.com>
@@ -13,18 +13,21 @@ description: |-
   Multicam audio sync for video editors.
   Orcaton lines up video and audio files from several cameras and recorders
   by their sound and saves the timeline back (FCP7 XML, DRT): a desktop window
-  and the orcaton command for the terminal. FFmpeg is used as an external program.
+  and the orcaton command for the terminal. FFmpeg is used as an external program:
+  install it from your distribution (the window offers the command).
 
 overrides:
   deb:
     depends:
       - libgtk-3-0t64 | libgtk-3-0
       - libwebkit2gtk-4.1-0
+    suggests:
       - ffmpeg
   rpm:
     depends:
       - libgtk-3.so.0()(64bit)
       - libwebkit2gtk-4.1.so.0()(64bit)
+    suggests:
       - /usr/bin/ffmpeg
 
 contents:

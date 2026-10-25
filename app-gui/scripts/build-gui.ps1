@@ -1,4 +1,4 @@
-﻿param([switch]$Run, [switch]$Shortcut)
+﻿param([switch]$Run, [switch]$Shortcut, [ValidateSet("", "amd64", "arm64")][string]$Arch = "")
 $ErrorActionPreference = "Stop"
 $AppGui = Split-Path -Parent $PSScriptRoot
 $Root = Split-Path -Parent $AppGui
@@ -15,24 +15,33 @@ if (-not (Get-Command "wails" -ErrorAction SilentlyContinue)) {
 }
 $env:GOFLAGS = "-buildvcs=false"
 $env:GOTOOLCHAIN = "auto"
+$cross = $Arch -and ($Arch -ne (go env GOHOSTARCH))
+if ($cross -and ($Run -or $Shortcut)) { Write-Host "-Run и -Shortcut — только для своей архитектуры" -ForegroundColor Red; exit 1 }
 Push-Location $AppGui
 try {
     if (-not (Test-Path "go.sum")) {
         go mod tidy
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
-    wails build -skipbindings -trimpath
+    $wargs = @("build", "-skipbindings", "-trimpath")
+    if ($cross) { $wargs += @("-platform", "windows/$Arch") }
+    wails @wargs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $exe = Join-Path $AppGui "build\bin\orcaton-gui.exe"
     Write-Host "Собрано: $exe"
     $bin = Split-Path $exe
-    $arch = (go env GOARCH)
+    $arch = if ($cross) { $Arch } else { (go env GOARCH) }
     Push-Location (Join-Path $Root "app-go")
     try {
         $env:CGO_ENABLED = "0"
+        if ($cross) { $env:GOARCH = $Arch }
         go build -trimpath -ldflags "-s -w" -o (Join-Path $bin "orcaton.exe") ./cmd/orcaton
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    } finally { Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue; Pop-Location }
+    } finally {
+        Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue
+        if ($cross) { Remove-Item Env:GOARCH -ErrorAction SilentlyContinue }
+        Pop-Location
+    }
     Write-Host "Команда: $(Join-Path $bin 'orcaton.exe')"
     foreach ($f in @("LICENSE", "NOTICE", "THIRD-PARTY-NOTICES.md", "VERSION")) { Copy-Item -Force (Join-Path $Root $f) $bin }
     $ff = Join-Path $Root "packaging\ffmpeg\windows-$arch"

@@ -47,6 +47,30 @@ auszuführen ist unbedenklich: Was schon installiert ist, wird nicht noch einmal
    steht. Die Verknüpfung **Orcaton** liegt jetzt auf dem Desktop und im Startmenü; das Terminal können
    Sie schließen. Ab jetzt — nur noch die Verknüpfung.
 
+### Windows: fertiges Installationsprogramm (.exe)
+Wenn Sie Orcaton als Datei `Orcaton-<Version>-windows-x64-setup.exe` (die meisten PCs) oder
+`Orcaton-<Version>-windows-arm64-setup.exe` (Windows on ARM, z. B. Snapdragon-Laptops) erhalten haben, muss nichts
+gebaut werden: Go, Node.js und Wails sind nicht nötig. Windows 10 oder 11.
+1. **Installationsprogramm starten** (Doppelklick). Orcaton ist kostenlos und nicht mit einem kostenpflichtigen
+   Zertifikat signiert, daher kann Windows „Der Computer wurde durch Windows geschützt“ zeigen → **Weitere
+   Informationen** → **Trotzdem ausführen**. Danach fragt Windows
+   „Möchten Sie zulassen, dass durch diese App Änderungen an Ihrem Gerät vorgenommen werden?“ → **Ja**
+   (Administratorrechte: Orcaton wird für alle Benutzer des Computers installiert).
+2. **Optionen:** *Add the orcaton command to PATH* und *Desktop shortcut* (beide an); die Verknüpfung im
+   Startmenü wird immer angelegt (für alle Benutzer).
+3. **Ordner:** standardmäßig `C:\Program Files\Orcaton`; **Browse…** — ein anderer Ordner. Auf der letzten Seite — *Run Orcaton*.
+4. **FFmpeg.** Zeigt das Fenster **FFmpeg ist nicht installiert** — **FFmpeg installieren** drücken (verwendet winget).
+
+* Aktualisieren — das neue Installationsprogramm starten (Orcaton vorher schließen; ist es noch offen, fragt das
+  Installationsprogramm nach). Die Einstellungen bleiben.
+* Eine frühere Kopie von Orcaton nur für Ihren Benutzer (`%LOCALAPPDATA%\Programs\Orcaton` — ein älteres
+  Installationsprogramm oder `scripts\install.ps1`) entfernt das Installationsprogramm automatisch; die Einstellungen
+  bleiben — nichts muss von Hand entfernt werden.
+* Heruntergeladene Datei prüfen: in PowerShell muss `(Get-FileHash Orcaton-…-setup.exe).Hash` denselben Wert wie
+  die Datei `.sha256` daneben ausgeben (Groß-/Kleinschreibung egal).
+* Ist **Smart App Control** (Windows 11) eingeschaltet, starten unsignierte Programme gar nicht; Orcaton
+  funktioniert dann nur mit ausgeschaltetem SAC (Windows-Sicherheit → App- & Browsersteuerung → Smart App Control).
+
 ## macOS (Apple Silicon und Intel)
 1. **Homebrew** (Paketverwaltung; überspringen, wenn bereits vorhanden). Öffnen Sie das **Terminal**
    (Spotlight: ⌘ + Leertaste → „Terminal“) und führen Sie den Befehl von <https://brew.sh> aus (eine
@@ -100,18 +124,21 @@ Fedora und Arch — derselbe Befehl (das Skript verwendet `dnf` / `pacman`).
 
 ### Linux: fertiges Paket (.deb / .rpm)
 Wenn Sie Orcaton als Paketdatei erhalten haben, muss nichts gebaut werden. Die Paketverwaltung installiert
-Orcaton zusammen mit allem Nötigen: den Fensterbibliotheken (GTK 3, WebKitGTK 4.1) und **FFmpeg** aus Ihrer
-Distribution (FFmpeg bleibt ein eigenes Paket unter seiner eigenen Lizenz). Öffnen Sie ein Terminal im
+Orcaton zusammen mit den Fensterbibliotheken (GTK 3, WebKitGTK 4.1); auf einem Desktop-System sind sie meist
+schon vorhanden, daher lässt sich das Paket auch ohne Internet installieren. **FFmpeg** gehört nicht zum Paket
+(wie unter macOS): installieren Sie es danach aus Ihrer Distribution — siehe unten. Öffnen Sie ein Terminal im
 Ordner mit der Datei und führen Sie aus (fragt nach Ihrem Passwort):
 
 | System | Datei | Befehl |
 |---|---|---|
-| Ubuntu 22.04 / 24.04, Debian 12, Linux Mint 21+ | `orcaton_<Version>-1_amd64.deb` | `sudo apt install ./orcaton_<Version>-1_amd64.deb` |
+| Ubuntu 22.04 / 24.04 / 26.04, Debian 12, Linux Mint 21+ | `orcaton_<Version>-1_amd64.deb` | `sudo apt install ./orcaton_<Version>-1_amd64.deb` |
 | Fedora 39 oder neuer | `orcaton-<Version>-1.x86_64.rpm` | `sudo dnf install ./orcaton-<Version>-1.x86_64.rpm` |
 
 * `./` am Anfang des Dateinamens ist nötig — sonst sucht apt / dnf das Paket im Internet.
 * Orcaton ist nicht signiert: lehnt dnf wegen fehlender Signatur ab, `--nogpgcheck` zum Befehl hinzufügen.
 * Danach: Anwendungsmenü → **Orcaton**; im Terminal — der Befehl `orcaton`.
+* **FFmpeg:** beim ersten Start zeigt das Fenster **FFmpeg is not installed** mit dem Befehl → **Install FFmpeg**
+  (fragt nach dem Passwort; braucht Internet). Oder im Terminal: `sudo apt install ffmpeg` (Fedora: `sudo dnf install /usr/bin/ffmpeg`).
 * Wurde Orcaton früher mit `bash scripts/install.sh` installiert, diese Kopie zuerst entfernen:
   `bash scripts/uninstall.sh` — sonst öffnet das Menü weiter die alte.
 * Aktualisieren — derselbe Befehl mit der neuen Datei. Datei prüfen: `sha256sum -c <Datei>.sha256`.
@@ -143,6 +170,7 @@ die installierte Kopie (vorher das Orcaton-Fenster schließen). Die Einstellunge
 | System | Wie |
 |---|---|
 | Windows | Einstellungen → Apps → **Orcaton** → Deinstallieren, oder `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` |
+| Windows, aus der `.exe` | Einstellungen → Apps → **Orcaton** → Deinstallieren; *Also remove settings and cache* ankreuzen, um auch diese zu löschen |
 | macOS / Linux | `bash scripts/uninstall.sh` |
 | Linux, aus `.deb` / `.rpm` | `sudo apt remove orcaton` / `sudo dnf remove orcaton`; FFmpeg und die Bibliotheken bleiben, Einstellungen — in `~/.config/orcaton` |
 | macOS, aus der `.dmg` | Über → **Befehlszeilen-Tool entfernen** (falls installiert), dann Orcaton aus „Programme“ in den Papierkorb ziehen; die Einstellungen bleiben in `~/Library/Application Support/orcaton` |
@@ -159,6 +187,7 @@ Einstellungen und der Audio-Cache gelöscht.
 | `не найдено: go / node` („nicht gefunden“) oder `… not recognized` nach der Installation | Terminal schließen, ein **neues** im Projektordner öffnen und den Befehl wiederholen (PATH wird aktualisiert) |
 | das Fenster öffnet sich weiß / leer (Windows 10) | die WebView2-Engine fehlt: `winget install Microsoft.EdgeWebView2Runtime`, dann wieder die Verknüpfung |
 | im Fenster der Hinweis **FFmpeg ist nicht installiert** | im Fenster **FFmpeg installieren** drücken (oder den angezeigten Befehl im Terminal ausführen), dann **Erneut prüfen** |
+| Windows: „Der Computer wurde durch Windows geschützt“ beim Start des Installationsprogramms | **Weitere Informationen** → **Trotzdem ausführen** (Orcaton ist nicht mit einem kostenpflichtigen Zertifikat signiert) |
 | macOS: „Apple konnte nicht überprüfen …“, „kann nicht geöffnet werden, da der Entwickler nicht verifiziert werden kann“ | Systemeinstellungen → Datenschutz & Sicherheit → **Dennoch öffnen** (macOS 12–14: Rechtsklick auf Orcaton → Öffnen → Öffnen) — siehe „macOS: fertiges Paket“ |
 | macOS: „Orcaton ist beschädigt und kann nicht geöffnet werden“ | die `.dmg` erneut laden und `shasum -a 256` prüfen; stimmt der Wert und die Meldung kommt wieder — Terminal: `xattr -dr com.apple.quarantine /Applications/Orcaton.app` |
 | Ubuntu: `libwebkit2gtk-4.1` nicht gefunden | Ubuntu älter als 22.04 wird nicht unterstützt: 22.04 oder neuer ist nötig |

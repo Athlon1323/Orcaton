@@ -13,7 +13,7 @@ for a in "$@"; do
 done
 export PATH="$HOME/.local/node/bin:$HOME/.local/go/bin:$HOME/.local/bin:$PATH"
 export PATH="$PATH:$(go env GOPATH 2>/dev/null)/bin"
-export GOFLAGS=-buildvcs=false GOTOOLCHAIN=auto
+export GOFLAGS=-buildvcs=false GOTOOLCHAIN="${GOTOOLCHAIN:-auto}"
 for c in go node npm wails; do
     command -v "$c" >/dev/null || { echo "не найдено: $c — поставьте инструменты: bash scripts/install.sh (или app-gui/scripts/install-gui.sh)" >&2; exit 1; }
 done
