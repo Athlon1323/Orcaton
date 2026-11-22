@@ -6,7 +6,7 @@ RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 
 !ifndef VERSION
-  !error "VERSION is not set (/DVERSION=0.0.46)"
+  !error "VERSION is not set (/DVERSION=0.0.47)"
 !endif
 !ifndef ARCH
   !error "ARCH is not set (/DARCH=x64 or /DARCH=arm64)"
@@ -78,7 +78,7 @@ VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright 2026 Athlon1323. Apache L
 
 !insertmacro MUI_LANGUAGE "English"
 
-Var OldDir   ; прежняя установка для пользователя (%LOCALAPPDATA%\Programs\Orcaton)
+Var OldDir   ; previous per-user install (%LOCALAPPDATA%\Programs\Orcaton)
 
 
 !macro CHECK_RUNNING_FUNC un

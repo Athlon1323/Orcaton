@@ -62,8 +62,8 @@ orcaton sync "Timeline 1.xml" "Timeline 1 - synced.xml"
 orcaton --help
 ```
 
-Full reference (in Russian) — [docs/go/usage.md](docs/go/usage.md); the engine API used by the window —
-[docs/go/api.md](docs/go/api.md).
+Full reference — [docs/go/usage.md](docs/go/usage.md); the engine API used by the window —
+[docs/go/api.md](docs/go/api.md). Both are also available in Deutsch, Русский and ქართული (`*.de.md`, `*.ru.md`, `*.ka.md`).
 
 ## Source layout
 

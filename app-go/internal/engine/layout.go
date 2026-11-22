@@ -45,7 +45,7 @@ func markUnplaced(units []*Unit) []*Unit {
 		if !u.placed() {
 			u.Status = core.StatusUnsynced
 			if u.Error == nil {
-				u.setError(ReasonNoMatch, "нет надёжного совпадения по звуку")
+				u.setError(ReasonNoMatch, "no reliable audio match")
 			}
 			u.Position = nil
 		}

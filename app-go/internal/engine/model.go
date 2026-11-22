@@ -133,6 +133,7 @@ type Unit struct {
 	HasAudio  bool
 	Device    string
 	RecTime   *float64
+	recAlt    []media.NameStamp
 	TC        *float64
 	Offline   bool
 	Feature   []float32
@@ -209,6 +210,7 @@ type Report struct {
 	TreeEdges         []*Edge
 	RejectedOverlap   int
 	RejectedOrder     int
+	SplitStamps       int
 	Ambiguous         int
 	Duplicates        int
 	InconsistentEdges int

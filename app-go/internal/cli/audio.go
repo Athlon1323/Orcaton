@@ -19,7 +19,7 @@ func cmdProbe(c *ctx) int {
 			c.println(err.Error())
 			return 3
 		}
-		c.printf("Ошибка: %v\n", err)
+		c.printf("Error: %v\n", err)
 		return 1
 	}
 	fm, _ := info["format"].(map[string]any)
@@ -35,7 +35,7 @@ func cmdProbe(c *ctx) int {
 			tags = fmt.Sprint(tg)
 		}
 	}
-	c.printf("%s длительность=%s c  tags=%s\n", formats.BaseName(m), g(fm, "duration"), tags)
+	c.printf("%s duration=%s s  tags=%s\n", formats.BaseName(m), g(fm, "duration"), tags)
 	sts, _ := info["streams"].([]any)
 	for _, s := range sts {
 		st, _ := s.(map[string]any)
@@ -67,7 +67,7 @@ func cmdOffset(c *ctx) int {
 		maxOff = c.Float("max-offset")
 	}
 	r := dsp.FindOffset(xa, xb, sr, 80, maxOff, 2.0)
-	c.printf("B начинается в A на %s c  уверенность=%s  пик=%s\n", num.Signed(r.OffsetSec, 3),
+	c.printf("B starts in A at %s s  confidence=%s  peak=%s\n", num.Signed(r.OffsetSec, 3),
 		num.Fixed(r.Confidence, 1), num.Fixed(r.Peak, 3))
 	return 0
 }

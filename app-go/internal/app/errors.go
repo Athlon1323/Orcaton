@@ -39,7 +39,7 @@ func wrap(k Kind, err error) error {
 	return &Error{Kind: k, Err: err}
 }
 
-var errUserCancel = errors.New("отменено пользователем")
+var errUserCancel = errors.New("cancelled by the user")
 
 func KindOf(err error) Kind {
 	if err == nil {

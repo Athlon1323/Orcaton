@@ -33,16 +33,16 @@ func RateString(s string) (Rate, error) {
 		ni, e1 := strconv.ParseInt(strings.TrimSpace(n), 10, 64)
 		di, e2 := strconv.ParseInt(strings.TrimSpace(d), 10, 64)
 		if e1 != nil || e2 != nil || di == 0 {
-			return Rate{}, fmt.Errorf("некорректная частота %q", s)
+			return Rate{}, fmt.Errorf("invalid frame rate %q", s)
 		}
 		if r := (Rate{FPS: num.F(ni, di)}); r.Valid() {
 			return r, nil
 		}
-		return Rate{}, fmt.Errorf("некорректная частота %q", s)
+		return Rate{}, fmt.Errorf("invalid frame rate %q", s)
 	}
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil || !ValidFloat(f) {
-		return Rate{}, fmt.Errorf("некорректная частота %q", s)
+		return Rate{}, fmt.Errorf("invalid frame rate %q", s)
 	}
 	return RateFloat(f), nil
 }
@@ -51,7 +51,7 @@ func RateFromXmeml(timebase string, ntscFlag *string) (Rate, error) {
 	isNTSC := ntscFlag != nil && strings.ToUpper(strings.TrimSpace(*ntscFlag)) == "TRUE"
 	tb, ok := num.ParseFraction(strings.TrimSpace(timebase))
 	if !ok {
-		return Rate{}, fmt.Errorf("некорректный timebase %q", timebase)
+		return Rate{}, fmt.Errorf("invalid timebase %q", timebase)
 	}
 	if isNTSC {
 		return Rate{FPS: num.Mul(tb, ntsc)}, nil
@@ -92,7 +92,7 @@ func dropFramesPerMin(r Rate) int64 { return 2 * (r.Timebase() / 30) }
 
 func TCToFrames(tc string, r Rate, dropFrame *bool) (int64, error) {
 	if !r.Valid() {
-		return 0, fmt.Errorf("таймкод %q: некорректная частота", tc)
+		return 0, fmt.Errorf("timecode %q: invalid frame rate", tc)
 	}
 	df := strings.Contains(tc, ";")
 	if dropFrame != nil {
@@ -101,13 +101,13 @@ func TCToFrames(tc string, r Rate, dropFrame *bool) (int64, error) {
 	t := strings.ReplaceAll(strings.ReplaceAll(tc, ";", ":"), ".", ":")
 	parts := strings.Split(t, ":")
 	if len(parts) != 4 {
-		return 0, fmt.Errorf("Некорректный таймкод: %q", tc)
+		return 0, fmt.Errorf("Invalid timecode: %q", tc)
 	}
 	var v [4]int64
 	for i, p := range parts {
 		n, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("Некорректный таймкод: %q", tc)
+			return 0, fmt.Errorf("Invalid timecode: %q", tc)
 		}
 		v[i] = n
 	}

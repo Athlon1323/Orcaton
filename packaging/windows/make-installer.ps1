@@ -25,28 +25,28 @@ if (-not $makensis) {
         if ($d -and (Test-Path (Join-Path $d "NSIS\makensis.exe"))) { $makensis = Join-Path $d "NSIS\makensis.exe"; break }
     }
 }
-if (-not $makensis) { Fail "Нет NSIS (makensis). Установите: winget install -e --id NSIS.NSIS — и откройте новое окно PowerShell." }
+if (-not $makensis) { Fail "NSIS (makensis) not found. Install it: winget install -e --id NSIS.NSIS - and open a new PowerShell window." }
 $nv = (& $makensis /VERSION) -replace '^v', ''
-if (-not ($nv -match '^3\.')) { Fail "Нужен NSIS 3, найден $nv ($makensis)" }
+if (-not ($nv -match '^3\.')) { Fail "NSIS 3 is required, found $nv ($makensis)" }
 
 $wj = Get-Content (Join-Path $AppGui "wails.json") -Raw | ConvertFrom-Json
-if ($wj.info.productVersion -ne $Version) { Fail "Версия расходится: VERSION $Version, wails.json $($wj.info.productVersion) — scripts\set-version.ps1 $Version" }
+if ($wj.info.productVersion -ne $Version) { Fail "Version mismatch: VERSION $Version, wails.json $($wj.info.productVersion) - scripts\set-version.ps1 $Version" }
 
 $native = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "arm64" } else { "amd64" }
 $archs = if ($Arch -eq "all") { @("x64", "arm64") } else { @($Arch) }
 $archs = @($archs | Where-Object { $GoArch[$_] -ne $native }) + @($archs | Where-Object { $GoArch[$_] -eq $native })
 if ($NoBuild -and ($archs | Where-Object { $GoArch[$_] -ne $native })) {
-    Fail "-NoBuild — только своя архитектура ($native): build\bin одна. Уберите -NoBuild или укажите -Arch."
+    Fail "-NoBuild works for this architecture only ($native): there is one build\bin. Remove -NoBuild or pass -Arch."
 }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
-Write-Host "Orcaton $Version · NSIS $nv · архитектуры: $($archs -join ', ')"
+Write-Host "Orcaton $Version | NSIS $nv | architectures: $($archs -join ', ')"
 
 $made = @()
 foreach ($a in $archs) {
     $ga = $GoArch[$a]
     $stage = Join-Path $Out "stage-$a"
     if (-not $NoBuild) {
-        Step "Сборка $a"
+        Step "Build $a"
         $backup = $null
         if ($ga -ne $native -and (Test-Path (Join-Path $Bin "orcaton-gui.exe"))) {
             $backup = Join-Path $Out "bin-backup"
@@ -56,7 +56,7 @@ foreach ($a in $archs) {
         }
         try {
             & (Join-Path $AppGui "scripts\build-gui.ps1") -Arch $ga
-            if ($LASTEXITCODE -ne 0) { Fail "Сборка $a не удалась" }
+            if ($LASTEXITCODE -ne 0) { Fail "Build $a failed" }
             if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
             New-Item -ItemType Directory -Force -Path $stage | Out-Null
             foreach ($f in $Files) { Copy-Item -Force (Join-Path $Bin $f) $stage }
@@ -70,33 +70,33 @@ foreach ($a in $archs) {
         if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
         New-Item -ItemType Directory -Force -Path $stage | Out-Null
         foreach ($f in $Files) {
-            if (-not (Test-Path (Join-Path $Bin $f))) { Fail "Нет $Bin\$f — сначала app-gui\scripts\build-gui.ps1" }
+            if (-not (Test-Path (Join-Path $Bin $f))) { Fail "No $Bin\$f - run app-gui\scripts\build-gui.ps1 first" }
             Copy-Item -Force (Join-Path $Bin $f) $stage
         }
     }
     foreach ($f in @("orcaton-gui.exe", "orcaton.exe")) {
         $pa = PeArch (Join-Path $stage $f)
-        if ($pa -ne $ga) { Fail "$f — архитектура $pa, ожидалась $ga" }
+        if ($pa -ne $ga) { Fail "$f - architecture $pa, expected $ga" }
     }
     $lic = [IO.File]::ReadAllText((Join-Path $stage "LICENSE")) -replace "`r`n", "`n" -replace "`n", "`r`n"
     [IO.File]::WriteAllText((Join-Path $stage "license-page.txt"), $lic, (New-Object System.Text.UTF8Encoding($false)))
 
-    Step "Установщик $a"
+    Step "Installer $a"
     $name = "Orcaton-$Version-windows-$a-setup.exe"
     $setup = Join-Path $Out $name
     if (Test-Path $setup) { Remove-Item -Force $setup }
     & $makensis /V2 /WX /INPUTCHARSET UTF8 "/DVERSION=$Version" "/DARCH=$a" "/DSRC=$stage" "/DOUTFILE=$setup" $Nsi
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $setup)) { Fail "makensis: ошибка ($a)" }
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $setup)) { Fail "makensis: error ($a)" }
     $hash = (Get-FileHash -Algorithm SHA256 $setup).Hash.ToLowerInvariant()
     [IO.File]::WriteAllText("$setup.sha256", "$hash  $name`n", (New-Object System.Text.UTF8Encoding($false)))
     Remove-Item -Recurse -Force $stage
     $mb = [math]::Round((Get-Item $setup).Length / 1MB, 1)
-    Write-Host "Готово: $setup ($mb МБ)" -ForegroundColor Green
+    Write-Host "Done: $setup ($mb MB)" -ForegroundColor Green
     Write-Host "SHA-256: $hash"
     $made += $setup
 }
 
-Write-Host "`nУстановщики: $Out" -ForegroundColor Green
+Write-Host "`nInstallers: $Out" -ForegroundColor Green
 foreach ($m in $made) { Write-Host "  $(Split-Path -Leaf $m)" }
-Write-Host "Проверка (PowerShell от имени администратора; лучше в «Песочнице Windows»): packaging\windows\check-installer.ps1"
-Write-Host "Не подписаны: при запуске SmartScreen — More info → Run anyway."
+Write-Host "Check (PowerShell as administrator; best in Windows Sandbox): packaging\windows\check-installer.ps1"
+Write-Host "Not signed: SmartScreen on launch - More info > Run anyway."

@@ -42,7 +42,7 @@ var DefaultExporter = &Exporter{Last: &PatchStats{}}
 
 func (*Exporter) Name() string { return "drt" }
 func (*Exporter) Title() string {
-	return "DRT timeline (.drt) — патч исходного .drt"
+	return "DRT timeline (.drt) — a patch of the source .drt"
 }
 func (*Exporter) Extensions() []string { return []string{".drt"} }
 
@@ -183,13 +183,13 @@ func source(p *core.Project) (string, error) {
 	if p.SourceFormat != "drt" || p.SourcePath == "" {
 		sf := p.SourceFormat
 		if sf == "" {
-			sf = "неизвестно"
+			sf = "unknown"
 		}
-		return "", formats.Errorf("DRT записывается только патчем исходного .drt: вход тоже должен "+
-			"быть .drt (сейчас — %s). Для входа XML выберите выход .xml", sf)
+		return "", formats.Errorf("DRT is written only by patching the source .drt: the input must "+
+			"be .drt too (now — %s). For XML input choose .xml output", sf)
 	}
 	if st, err := os.Stat(p.SourcePath); err != nil || st.IsDir() {
-		return "", formats.Errorf("Исходный .drt не найден (нужен для записи патчем): %s", p.SourcePath)
+		return "", formats.Errorf("Source .drt not found (needed for patching): %s", p.SourcePath)
 	}
 	return p.SourcePath, nil
 }
@@ -255,7 +255,7 @@ func patchSequence(seq *core.Sequence, data map[string][]byte, order []string,
 	stats *PatchStats) error {
 	entry := seq.DrtEntry
 	if _, ok := data[entry]; entry == "" || !ok {
-		return formats.Errorf("Таймлайн '%s': не найден SeqContainer в исходном .drt", seq.Name)
+		return formats.Errorf("Timeline '%s': SeqContainer not found in the source .drt", seq.Name)
 	}
 	rate := seq.Rate
 	tc := rate.SecondsToFrames(seq.TCStart)
@@ -306,7 +306,7 @@ func patchSequence(seq *core.Sequence, data map[string][]byte, order []string,
 			loc := startRe.FindSubmatchIndex(inner)
 			if loc == nil {
 				if ferr == nil {
-					ferr = formats.Errorf("Клип %s: нет поля Start", im.id)
+					ferr = formats.Errorf("Clip %s: no Start field", im.id)
 				}
 				nb.Write(whole)
 				continue

@@ -114,7 +114,7 @@ func keepDuplicatesInLane(units []*Unit) {
 	}
 }
 
-const dupReasonText = "копия другого файла проекта (в DRT новые дорожки не добавляются)"
+const dupReasonText = "a copy of another project file (DRT does not get new tracks)"
 
 func (e *Engine) fitDuplicatesInPlace(units []*Unit) {
 	busy := map[string][]interval{}

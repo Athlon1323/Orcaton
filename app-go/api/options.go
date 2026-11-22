@@ -55,10 +55,10 @@ func (o Options) engine() (engine.Options, error) {
 	pl, ok := engine.ParsePlacement(o.Unsynced)
 	if !ok {
 		return e, &engine.OptionError{Name: "Unsynced",
-			Msg: "допустимо edges | order_time | end | remove, получено " + quote(o.Unsynced)}
+			Msg: "allowed values are edges | order_time | end | remove, got " + quote(o.Unsynced)}
 	}
 	if o.MaxOffsetSec < 0 {
-		return e, &engine.OptionError{Name: "MaxOffsetSec", Msg: "нужно ≥ 0 (0 — без ограничения)"}
+		return e, &engine.OptionError{Name: "MaxOffsetSec", Msg: "must be ≥ 0 (0 — no limit)"}
 	}
 	e.Unsynced, e.UnsyncedLabel, e.TimeLabel = pl, o.UnsyncedLabel, o.TimeLabel
 	e.OrderBy, e.Singles = o.OrderBy, o.Singles

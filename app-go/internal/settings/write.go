@@ -21,7 +21,7 @@ func Update(path string, vals []KV) error {
 	for _, kv := range vals {
 		k, ok := Lookup(kv.Name)
 		if !ok {
-			return &Error{Path: path, Key: kv.Name, Msg: "неизвестный ключ"}
+			return &Error{Path: path, Key: kv.Name, Msg: "unknown key"}
 		}
 		if kv.Val != nil {
 			if _, err := Format(k, kv.Val); err != nil {
@@ -47,7 +47,7 @@ func Update(path string, vals []KV) error {
 	}
 	out := strings.Join(lines, nl) + nl
 	if _, err := toml.Parse(out); err != nil {
-		return &Error{Path: path, Msg: "после правки файл не читается: " + err.Error()}
+		return &Error{Path: path, Msg: "the file cannot be read after the edit: " + err.Error()}
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -185,7 +185,7 @@ func Format(k Key, v any) (string, error) {
 			return "[" + strings.Join(q, ", ") + "]", nil
 		}
 	}
-	return "", fmt.Errorf("значение %v не того типа", v)
+	return "", fmt.Errorf("value %v has the wrong type", v)
 }
 
 func Quote(s string) string {

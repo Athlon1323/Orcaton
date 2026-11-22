@@ -58,8 +58,8 @@ func CheckOutput(p *core.Project, dst, to, report string) (format, reportPath st
 		return "", "", wrap(KindBadOutput, err)
 	}
 	if exp.Name() == "drt" && p.SourceFormat != "drt" {
-		return "", "", wrap(KindBadOutput, errors.New("выход .drt пишется патчем исходного .drt — "+
-			"вход тоже должен быть .drt. Для входа XML выберите выход .xml"))
+		return "", "", wrap(KindBadOutput, errors.New(".drt output is written by patching the source .drt — "+
+			"the input must be .drt too. For XML input choose .xml output"))
 	}
 	if exp.Name() == "drt" && report == "" {
 		report = filepath.Join(filepath.Dir(dst), formats.Stem(dst)+"_report.csv")

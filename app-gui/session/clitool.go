@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	posixpath "path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -117,13 +118,13 @@ func (s *Session) changeCLITool(action, prompt string) (r CLIToolReply) {
 	r.Tool = s.CLITool()
 	switch {
 	case err != nil && (ctx.Err() != nil || strings.Contains(out, "-128")):
-		r.Error = &api.ErrorInfo{Kind: api.ErrCancelled, Message: "окно пароля закрыто — ничего не изменено"}
+		r.Error = &api.ErrorInfo{Kind: api.ErrCancelled, Message: "the password window was closed — nothing changed"}
 	case err != nil:
 		r.Error = &api.ErrorInfo{Kind: api.ErrFailed, Message: fmt.Sprintf("%v: %s", err, strings.TrimSpace(out)),
-			Hint: "В Терминале: sudo " + sh}
+			Hint: "In Terminal: sudo " + sh}
 	case action == "install" && !r.Tool.Installed, action == "remove" && r.Tool.Installed:
-		r.Error = &api.ErrorInfo{Kind: api.ErrFailed, Message: "команда выполнена, но " + t.Link + " не изменился",
-			Hint: "В Терминале: sudo " + sh}
+		r.Error = &api.ErrorInfo{Kind: api.ErrFailed, Message: "the command ran, but " + t.Link + " did not change",
+			Hint: "In Terminal: sudo " + sh}
 	}
 	s.log.Printf("cli-tool %s: installed=%v", action, r.Tool.Installed)
 	return r
@@ -131,21 +132,21 @@ func (s *Session) changeCLITool(action, prompt string) (r CLIToolReply) {
 
 func cliShell(action string, t CLITool) (string, error) {
 	if !t.Available {
-		return "", errors.New("команда orcaton ставится так только на macOS")
+		return "", errors.New("the orcaton command is installed this way only on macOS")
 	}
 	switch action {
 	case "install":
 		if t.Problem != "" {
-			return "", errors.New("установить нельзя: " + t.Problem)
+			return "", errors.New("cannot install: " + t.Problem)
 		}
-		return "mkdir -p " + shQuote(filepath.Dir(t.Link)) + " && ln -sfn " + shQuote(t.Target) + " " + shQuote(t.Link), nil
+		return "mkdir -p " + shQuote(posixpath.Dir(t.Link)) + " && ln -sfn " + shQuote(t.Target) + " " + shQuote(t.Link), nil
 	case "remove":
 		if !t.Installed {
-			return "", errors.New(t.Link + " не ведёт на эту программу — не трогаем")
+			return "", errors.New(t.Link + " does not point to this program — leaving it alone")
 		}
 		return "rm -f " + shQuote(t.Link), nil
 	}
-	return "", errors.New("неизвестное действие: " + action)
+	return "", errors.New("unknown action: " + action)
 }
 
 func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }

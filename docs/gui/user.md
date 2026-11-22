@@ -4,7 +4,7 @@
 
 > **Status: alpha.** The window already works: open a timeline → find media →
 > synchronize → save. Items marked *(later)* are not in the window yet. The terminal does all the same —
-> [docs/go/usage.md](../go/usage.md) (in Russian). **The terminal stays**: the window and
+> [docs/go/usage.md](../go/usage.md). **The terminal stays**: the window and
 > `orcaton sync` run on the same core and give the same result.
 
 ## How to open the window
@@ -163,7 +163,7 @@ after editing, in your `orcaton.toml` (the path is at the bottom of the section)
 | Save report | `--report` | always for `.drt` |
 
 Window and terminal settings are shared: your `orcaton.toml` and the one next to the timeline
-([usage.md](../go/usage.md#файл-настроек-orcatontoml), in Russian); what you change in the window also
+([usage.md](../go/usage.md#settings-file-orcatontoml)); what you change in the window also
 applies to `orcaton sync`. The window language is not a terminal setting — it lives in `gui.json`.
 
 ## About and Developer tools
@@ -175,7 +175,7 @@ applies to `orcaton sync`. The window language is not a terminal setting — it 
   (`%LocalAppData%\orcaton\logs`), cache.
 
 ## Terminal only
-`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` for scripts — [docs/go/usage.md](../go/usage.md) (in Russian).
+`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` for scripts — [docs/go/usage.md](../go/usage.md).
 
 ## Questions
 **The window says "FFmpeg is not installed".** Orcaton reads audio with FFmpeg — a free program that is

@@ -113,7 +113,7 @@ func Read(path string) (*Layer, error) {
 	for _, k := range doc.Keys {
 		if _, ok := doc.M[k].(*toml.Table); !ok {
 			if _, arr := doc.M[k].([]*toml.Table); !arr {
-				return nil, &Error{Path: path, Key: k, Msg: "ключ вне раздела [" + Section + "]"}
+				return nil, &Error{Path: path, Key: k, Msg: "key outside the [" + Section + "] section"}
 			}
 		}
 	}
@@ -124,10 +124,10 @@ func Read(path string) (*Layer, error) {
 	for _, raw := range sec.Keys {
 		key, ok := Lookup(raw)
 		if !ok {
-			return nil, &Error{Path: path, Key: raw, Msg: "неизвестный ключ (список — orcaton config --init)"}
+			return nil, &Error{Path: path, Key: raw, Msg: "unknown key (list — orcaton config --init)"}
 		}
 		if _, dup := l.Vals[key.Name]; dup {
-			return nil, &Error{Path: path, Key: raw, Msg: "ключ задан дважды"}
+			return nil, &Error{Path: path, Key: raw, Msg: "key set twice"}
 		}
 		v, err := convert(key, sec.M[raw])
 		if err != nil {
@@ -148,22 +148,22 @@ func convert(k Key, v any) (any, error) {
 		if b, ok := v.(bool); ok {
 			return b, nil
 		}
-		return nil, fmt.Errorf("ожидается true или false")
+		return nil, fmt.Errorf("expected true or false")
 	case Int:
 		if n, ok := v.(toml.Num); ok && n.IsInt {
 			return int(n.V), nil
 		}
-		return nil, fmt.Errorf("ожидается целое число")
+		return nil, fmt.Errorf("expected an integer")
 	case Float:
 		if n, ok := v.(toml.Num); ok {
 			return n.V, nil
 		}
-		return nil, fmt.Errorf("ожидается число")
+		return nil, fmt.Errorf("expected a number")
 	case String:
 		if s, ok := v.(string); ok {
 			return s, nil
 		}
-		return nil, fmt.Errorf("ожидается строка в кавычках")
+		return nil, fmt.Errorf("expected a quoted string")
 	}
 	switch x := v.(type) {
 	case string:
@@ -173,13 +173,13 @@ func convert(k Key, v any) (any, error) {
 		for _, e := range x {
 			s, ok := e.(string)
 			if !ok {
-				return nil, fmt.Errorf("ожидается список строк")
+				return nil, fmt.Errorf("expected a list of strings")
 			}
 			out = append(out, s)
 		}
 		return out, nil
 	}
-	return nil, fmt.Errorf("ожидается список строк: [\"a\", \"b\"]")
+	return nil, fmt.Errorf("expected a list of strings: [\"a\", \"b\"]")
 }
 
 func resolve(k Key, v any, dir string) any {

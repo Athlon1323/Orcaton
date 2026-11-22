@@ -58,7 +58,7 @@ var versionRe = regexp.MustCompile(`^n?(\d+)\.(\d+)`)
 var installHint = map[string]string{
 	"windows": "winget install Gyan.FFmpeg",
 	"darwin":  "brew install ffmpeg",
-	"linux":   "sudo apt install ffmpeg  (или dnf/pacman)",
+	"linux":   "sudo apt install ffmpeg  (or dnf/pacman)",
 }
 
 var executable = os.Executable
@@ -113,9 +113,9 @@ func Bin(name string) (string, error) {
 	}
 	hint, ok := installHint[runtime.GOOS]
 	if !ok {
-		hint = "установите FFmpeg"
+		hint = "install FFmpeg"
 	}
-	return "", &FFmpegNotFound{fmt.Sprintf("%s не найден. Установка: %s; или задайте ORCATON_FFMPEG_DIR.", name, hint)}
+	return "", &FFmpegNotFound{fmt.Sprintf("%s not found. Install: %s; or set ORCATON_FFMPEG_DIR.", name, hint)}
 }
 
 func Probe(path string) (map[string]any, error) {

@@ -8,13 +8,13 @@ export CGO_ENABLED=0
 cd "$APPGO"
 mkdir -p bin
 go build -trimpath -ldflags "-s -w" -o bin/orcaton ./cmd/orcaton
-echo "Собрано: $APPGO/bin/orcaton"
+echo "Built: $APPGO/bin/orcaton"
 inst="$HOME/.local/bin/orcaton"
 if [ -f "$inst" ]; then
     if cp -f bin/orcaton "$inst.new" 2>/dev/null && mv -f "$inst.new" "$inst"; then
-        echo "Обновлена команда orcaton: $inst"
+        echo "Updated the orcaton command: $inst"
     else
-        rm -f "$inst.new" 2>/dev/null || true; echo "orcaton не обновлена: $inst"
+        rm -f "$inst.new" 2>/dev/null || true; echo "orcaton not updated: $inst"
     fi
 fi
 if [ "${1:-}" = "--all" ]; then

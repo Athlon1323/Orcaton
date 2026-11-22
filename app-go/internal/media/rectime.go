@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"orcaton/internal/formats"
 	"orcaton/internal/pyio"
@@ -25,6 +27,7 @@ type RecordTime struct {
 	Start  float64
 	Source string
 	Origin string
+	Alt    []NameStamp
 }
 
 func rtKey(name string) string { return formats.Casefold(formats.NFC(formats.Stem(name))) }
@@ -52,9 +55,45 @@ func ReadSidecar(path string) (float64, bool) {
 }
 
 func ContainerTime(path string) (float64, bool) {
+	t, ok, _ := containerTime(path)
+	return t, ok
+}
+
+func containerTime(path string) (float64, bool, string) {
+	tags, ok := containerTags(path)
+	if !ok {
+		return 0, false, ""
+	}
+	if t, ok := tagsTime(tags); ok {
+		return t, true, ""
+	}
+	return 0, false, tags["date"]
+}
+
+var (
+	dateTagRe = regexp.MustCompile(`^(\d{4})\D(\d{2})\D(\d{2})$`)
+	timeTagRe = regexp.MustCompile(`^(\d{2})\D(\d{2})\D(\d{2})$`)
+)
+
+func tagsTime(tags map[string]string) (float64, bool) {
+	ct := strings.TrimSpace(tags["creation_time"])
+	if ct == "" {
+		return 0, false
+	}
+	if t, err := ParseTime(ct); err == nil {
+		return t, true
+	}
+	d, tm := dateTagRe.FindStringSubmatch(strings.TrimSpace(tags["date"])), timeTagRe.FindStringSubmatch(ct)
+	if d == nil || tm == nil {
+		return 0, false
+	}
+	return stampOf(atoi(d[1]), atoi(d[2]), atoi(d[3]), atoi(tm[1]), atoi(tm[2]), atoi(tm[3]))
+}
+
+func containerTags(path string) (map[string]string, bool) {
 	info, err := Probe(path)
 	if err != nil {
-		return 0, false
+		return nil, false
 	}
 	tags := map[string]string{}
 	if fm, ok := info["format"].(map[string]any); ok {
@@ -81,19 +120,62 @@ func ContainerTime(path string) (float64, bool) {
 	enc := strings.ToLower(strings.Join(parts, " "))
 	for _, r := range renderers {
 		if strings.Contains(enc, r) {
-			return 0, false
+			return nil, false
 		}
 	}
-	ct := tags["creation_time"]
-	if ct == "" {
-		return 0, false
-	}
-	t, err := ParseTime(ct)
-	if err != nil {
-		return 0, false
-	}
-	return t, true
+	return tags, true
 }
+
+type NameStamp struct {
+	Format string
+	T      float64
+}
+
+var (
+	nameLongRe  = regexp.MustCompile(`(?:^|\D)(20\d{2})(\d{2})(\d{2})_?(\d{2})(\d{2})(\d{2})(?:\D|$)`)
+	nameShortRe = regexp.MustCompile(`(?:^|\D)(\d{2})(\d{2})(\d{2})[_-](\d{2})(\d{2})(\d{2})(?:\D|$)`)
+)
+
+func NameTimes(name string) []NameStamp {
+	stem := strings.TrimSuffix(name, filepath.Ext(name))
+	if m := nameLongRe.FindStringSubmatch(stem); m != nil {
+		if t, ok := stampOf(atoi(m[1]), atoi(m[2]), atoi(m[3]), atoi(m[4]), atoi(m[5]), atoi(m[6])); ok {
+			return []NameStamp{{"YYYYMMDD", t}}
+		}
+		return nil
+	}
+	m := nameShortRe.FindStringSubmatch(stem)
+	if m == nil {
+		return nil
+	}
+	a, b, c := atoi(m[1]), atoi(m[2]), atoi(m[3])
+	h, mi, se := atoi(m[4]), atoi(m[5]), atoi(m[6])
+	var out []NameStamp
+	seen := map[float64]bool{}
+	for _, f := range []struct {
+		name     string
+		y, mo, d int
+	}{{"YYMMDD", a, b, c}, {"DDMMYY", c, b, a}, {"MMDDYY", c, a, b}} {
+		if t, ok := stampOf(2000+f.y, f.mo, f.d, h, mi, se); ok && !seen[t] {
+			seen[t] = true
+			out = append(out, NameStamp{f.name, t})
+		}
+	}
+	return out
+}
+
+func stampOf(y, mo, d, h, mi, se int) (float64, bool) {
+	if mo < 1 || mo > 12 || d < 1 || h > 23 || mi > 59 || se > 59 {
+		return 0, false
+	}
+	tm := time.Date(y, time.Month(mo), d, h, mi, se, 0, time.UTC)
+	if tm.Day() != d {
+		return 0, false
+	}
+	return float64(tm.Unix()), true
+}
+
+func atoi(s string) int { v, _ := strconv.Atoi(s); return v }
 
 type RecordTimes struct {
 	ProbeMedia   bool
@@ -166,7 +248,7 @@ func isFile(p string) bool {
 func (rt *RecordTimes) find(name, path string) *RecordTime {
 	k := rtKey(name)
 	if t, ok := rt.table[k]; ok {
-		return &RecordTime{t, "table", "table"}
+		return &RecordTime{Start: t, Source: "table", Origin: "table"}
 	}
 	if path != "" && !rt.NoMediaFiles && isDir(filepath.Dir(path)) {
 		base := filepath.Base(path)
@@ -178,29 +260,52 @@ func (rt *RecordTimes) find(name, path string) *RecordTime {
 			filepath.Join(filepath.Dir(path), stem+"M01.xml")} {
 			if isFile(cand) {
 				if t, ok := ReadSidecar(cand); ok {
-					return &RecordTime{t, "sidecar", cand}
+					return &RecordTime{Start: t, Source: "sidecar", Origin: cand}
 				}
 			}
 		}
 	}
 	if sc, ok := rt.sidecars[k]; ok {
 		if t, ok := ReadSidecar(sc); ok {
-			return &RecordTime{t, "sidecar", sc}
+			return &RecordTime{Start: t, Source: "sidecar", Origin: sc}
 		}
 	}
+	date := ""
 	if rt.ProbeMedia {
 		if v, ok := rt.videos[k]; ok {
 			if t, ok := ContainerTime(v); ok {
-				return &RecordTime{t, "container", v}
+				return &RecordTime{Start: t, Source: "container", Origin: v}
 			}
 		}
 		if path != "" && !rt.NoMediaFiles && isFile(path) {
-			if t, ok := ContainerTime(path); ok {
-				return &RecordTime{t, "container", path}
+			t, ok, d := containerTime(path)
+			if ok {
+				return &RecordTime{Start: t, Source: "container", Origin: path}
+			}
+			date = d
+		}
+	}
+	return nameTime(name, date)
+}
+
+func nameTime(name, date string) *RecordTime {
+	cands := NameTimes(name)
+	if len(cands) == 0 {
+		return nil
+	}
+	if d := dateTagRe.FindStringSubmatch(strings.TrimSpace(date)); d != nil && len(cands) > 1 {
+		for _, c := range cands {
+			if time.Unix(int64(c.T), 0).UTC().Format("2006 01 02") == d[1]+" "+d[2]+" "+d[3] {
+				cands = []NameStamp{c}
+				break
 			}
 		}
 	}
-	return nil
+	r := &RecordTime{Start: cands[0].T, Source: "name", Origin: name}
+	if len(cands) > 1 {
+		r.Alt = cands
+	}
+	return r
 }
 
 func LoadTable(path string) (map[string]float64, error) {

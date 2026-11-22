@@ -9,19 +9,19 @@ import (
 
 func cacheGroup() *command {
 	cacheOpt := opt{names: []string{"--cache"}, kind: kStr,
-		help: "Папка кэша (по умолчанию — системная, или $ORCATON_CACHE_DIR)"}
-	dry := opt{names: []string{"--dry-run"}, kind: kBool, def: false, help: "Только показать, что будет удалено"}
-	g := &command{name: "cache", help: "Кэш признаков звука: где лежит, сколько занимает, очистка.\n\n" +
-		"  Из любой папки: orcaton cache (= cache info) · orcaton cache clear · " +
+		help: "Cache folder (default — the system one, or $ORCATON_CACHE_DIR)"}
+	dry := opt{names: []string{"--dry-run"}, kind: kBool, def: false, help: "Only show what would be deleted"}
+	g := &command{name: "cache", help: "Audio feature cache: where it is, how much space it takes, cleanup.\n\n" +
+		"  From any folder: orcaton cache (= cache info) · orcaton cache clear · " +
 		"orcaton cache prune --older-than 30d",
 		group: map[string]*command{}, order: []string{"info", "clear", "prune"}, deflt: "info"}
-	g.group["info"] = &command{name: "info", help: "Где кэш, сколько места занимает, сколько записей и обрывков.",
+	g.group["info"] = &command{name: "info", help: "Where the cache is, how much space it takes, how many entries and leftovers.",
 		opts: []opt{cacheOpt, jsonOpt}, run: cmdCacheInfo}
-	g.group["clear"] = &command{name: "clear", help: "Очистить кэш целиком (признаки пересчитаются при следующей синхронизации).",
+	g.group["clear"] = &command{name: "clear", help: "Clear the whole cache (features are recomputed on the next synchronization).",
 		opts: []opt{cacheOpt, dry, jsonOpt}, run: cmdCacheClear}
-	g.group["prune"] = &command{name: "prune", help: "Удалить давно не использованные записи и обрывки *.tmp прерванных прогонов.",
+	g.group["prune"] = &command{name: "prune", help: "Delete entries not used for a long time and *.tmp leftovers of interrupted runs.",
 		opts: []opt{{names: []string{"--older-than"}, kind: kStr, def: "30d",
-			help: "Удалить записи, не использованные дольше: 30d, 12h, 2w"}, cacheOpt, dry, jsonOpt},
+			help: "Delete entries unused for longer than: 30d, 12h, 2w"}, cacheOpt, dry, jsonOpt},
 		run: cmdCachePrune}
 	return g
 }
@@ -47,32 +47,32 @@ func cmdCacheInfo(c *ctx) int {
 	}
 	created := ""
 	if !st.Exists {
-		created = "  (ещё не создан)"
+		created = "  (not created yet)"
 	}
-	c.printf("Кэш: %s%s\n", st.Path, created)
+	c.printf("Cache: %s%s\n", st.Path, created)
 	other := ""
 	if st.Other > 0 {
-		other = fmt.Sprintf(" | чужих файлов: %d (не трогаем)", st.Other)
+		other = fmt.Sprintf(" | foreign files: %d (left alone)", st.Other)
 	}
-	c.printf("Записей: %d (%s), обрывков *.tmp: %d (%s), всего %s | использовались: %s … %s%s\n",
+	c.printf("Entries: %d (%s), *.tmp leftovers: %d (%s), total %s | used: %s … %s%s\n",
 		st.Entries, media.HumanBytes(st.EntriesBytes), st.Tmp, media.HumanBytes(st.TmpBytes),
 		media.HumanBytes(st.TotalBytes()), day(st.Oldest), day(st.Newest), other)
 	return 0
 }
 
 func printClean(c *ctx, res *media.CleanResult, what string) {
-	c.printf("Кэш: %s\n", cacheDir(c))
-	verb := "Удалено"
+	c.printf("Cache: %s\n", cacheDir(c))
+	verb := "Deleted"
 	if res.DryRun {
-		verb = "Будет удалено"
+		verb = "Would delete"
 	}
 	kept := ""
 	if res.Kept > 0 {
-		kept = fmt.Sprintf(", осталось записей: %d", res.Kept)
+		kept = fmt.Sprintf(", entries left: %d", res.Kept)
 	}
 	c.printf("%s %s: %d (%s)%s\n", verb, what, res.Removed, media.HumanBytes(res.RemovedBytes), kept)
 	for _, e := range res.Errors[:min(10, len(res.Errors))] {
-		c.printf("  не удалось: %s\n", e)
+		c.printf("  failed: %s\n", e)
 	}
 }
 
@@ -81,7 +81,7 @@ func cmdCacheClear(c *ctx) int {
 	if c.Bool("json") {
 		c.emitJSON(res.AsDict())
 	} else {
-		printClean(c, res, "файлов кэша")
+		printClean(c, res, "cache files")
 	}
 	if len(res.Errors) > 0 {
 		return 1
@@ -100,7 +100,7 @@ func cmdCachePrune(c *ctx) int {
 	if c.Bool("json") {
 		c.emitJSON(res.AsDict())
 	} else {
-		printClean(c, res, "старше "+ot+" и обрывков")
+		printClean(c, res, "older than "+ot+" and leftovers")
 	}
 	if len(res.Errors) > 0 {
 		return 1

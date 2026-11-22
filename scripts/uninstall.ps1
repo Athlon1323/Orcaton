@@ -7,18 +7,18 @@ $Data = @((Join-Path $env:APPDATA "orcaton"), (Join-Path $env:LOCALAPPDATA "orca
           (Join-Path $env:APPDATA "orcaton-gui.exe"))
 
 if (-not (Test-Path (Join-Path $Dest "orcaton-gui.exe")) -and -not (Test-Path $RegKey)) {
-    Write-Host "Orcaton не установлен ($Dest)."
+    Write-Host "Orcaton is not installed ($Dest)."
     if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton") {
-        Write-Host "Установка из .exe (Program Files) удаляется через «Параметры → Приложения → Orcaton»."
+        Write-Host "An install from the .exe (Program Files) is removed via Settings > Apps > Orcaton."
     }
     exit 0
 }
 if (-not $Yes) {
-    $what = if ($Purge) { "программу, ярлыки, настройки и кэш" } else { "программу и ярлыки (настройки и кэш останутся)" }
-    $a = Read-Host "Удалить Orcaton — $what? [y/N]"
-    if ($a -notmatch '^(y|yes|д|да)$') { Write-Host "Отменено."; exit 0 }
+    $what = if ($Purge) { "the program, shortcuts, settings and cache" } else { "the program and shortcuts (settings and cache stay)" }
+    $a = Read-Host "Remove Orcaton - $what? [y/N]"
+    if ($a -notmatch '^(y|yes)$') { Write-Host "Cancelled."; exit 0 }
 }
-if (Get-Process -Name "orcaton-gui" -ErrorAction SilentlyContinue) { throw "Orcaton сейчас открыт — закройте окно и повторите" }
+if (Get-Process -Name "orcaton-gui" -ErrorAction SilentlyContinue) { throw "Orcaton is running - close the window and try again" }
 
 $manifest = Join-Path $Dest "install-manifest.txt"
 $items = if (Test-Path $manifest) { Get-Content $manifest } else {
@@ -31,7 +31,7 @@ foreach ($it in $items) {
         "shortcut" {
             if (Test-Path $val) {
                 $t = (New-Object -ComObject WScript.Shell).CreateShortcut($val).TargetPath
-                if ($t -and $t.StartsWith($Dest, [StringComparison]::OrdinalIgnoreCase)) { Remove-Item -Force $val; Write-Host "Ярлык: $val" }
+                if ($t -and $t.StartsWith($Dest, [StringComparison]::OrdinalIgnoreCase)) { Remove-Item -Force $val; Write-Host "Shortcut: $val" }
             }
         }
         "path" {
@@ -45,22 +45,22 @@ foreach ($it in $items) {
                         $k.SetValue($n, ($parts -join ";"), $k.GetValueKind($n))
                         [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", "1", "User")
                         [Environment]::SetEnvironmentVariable("ORCATON_PATH_REFRESH", $null, "User")
-                        Write-Host "PATH: убрано $val"
+                        Write-Host "PATH: removed $val"
                     }
                 }
             } finally { $k.Close() }
         }
-        "registry" { if ($val -eq $RegKey -and (Test-Path $val)) { Remove-Item -Recurse -Force $val; Write-Host "«Приложения»: запись удалена" } }
+        "registry" { if ($val -eq $RegKey -and (Test-Path $val)) { Remove-Item -Recurse -Force $val; Write-Host "Apps: entry removed" } }
     }
 }
 if ($Purge) {
-    foreach ($d in $Data) { if (Test-Path $d) { Remove-Item -Recurse -Force $d; Write-Host "Удалено: $d" } }
+    foreach ($d in $Data) { if (Test-Path $d) { Remove-Item -Recurse -Force $d; Write-Host "Removed: $d" } }
 } else {
-    Write-Host "Настройки и кэш остались: $($Data -join ', ') (удалить: -Purge)"
+    Write-Host "Settings and cache are kept: $($Data -join ', ') (to remove: -Purge)"
 }
 Set-Location $env:TEMP
 Remove-Item -Recurse -Force $Dest -ErrorAction SilentlyContinue
 if (Test-Path $Dest) {
     Start-Process -WindowStyle Hidden cmd.exe -ArgumentList "/c timeout /t 2 >nul & rd /s /q `"$Dest`""
 }
-Write-Host "`nOrcaton удалён. Go, Node.js, Wails и FFmpeg не тронуты (удалить при желании: winget uninstall <имя>)." -ForegroundColor Green
+Write-Host "`nOrcaton removed. Go, Node.js, Wails and FFmpeg are untouched (to remove them: winget uninstall <name>)." -ForegroundColor Green

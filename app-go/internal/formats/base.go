@@ -47,7 +47,7 @@ func DetectImporter(path, fmtName string) (Importer, error) {
 				return i, nil
 			}
 		}
-		return nil, Errorf("Неизвестный формат импорта: %s", fmtName)
+		return nil, Errorf("Unknown import format: %s", fmtName)
 	}
 	for _, i := range importers {
 		ok, err := i.Sniff(path)
@@ -66,7 +66,7 @@ func DetectImporter(path, fmtName string) (Importer, error) {
 			}
 		}
 	}
-	return nil, Errorf("Не удалось определить формат файла: %s", path)
+	return nil, Errorf("Could not detect the file format: %s", path)
 }
 
 func ExporterFor(path, fmtName string) (Exporter, error) {
@@ -76,7 +76,7 @@ func ExporterFor(path, fmtName string) (Exporter, error) {
 				return e, nil
 			}
 		}
-		return nil, Errorf("Неизвестный формат экспорта: %s", fmtName)
+		return nil, Errorf("Unknown export format: %s", fmtName)
 	}
 	ext := strings.ToLower(Suffix(path))
 	for _, e := range exporters {
@@ -86,7 +86,7 @@ func ExporterFor(path, fmtName string) (Exporter, error) {
 			}
 		}
 	}
-	return nil, Errorf("Нет экспортёра для расширения '%s'", ext)
+	return nil, Errorf("No exporter for extension '%s'", ext)
 }
 
 func ReadProject(path, fmtName string, pathMap *string) (*core.Project, error) {
@@ -99,7 +99,7 @@ func ReadProject(path, fmtName string, pathMap *string) (*core.Project, error) {
 		return nil, err
 	}
 	if len(p.Sequences) == 0 {
-		return nil, Errorf("%s: в проекте нет ни одной секвенции (таймлайна)", path)
+		return nil, Errorf("%s: the project has no sequence (timeline)", path)
 	}
 	spec := os.Getenv("ORCATON_PATH_MAP")
 	if pathMap != nil {

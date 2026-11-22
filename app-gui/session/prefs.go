@@ -89,7 +89,7 @@ func (s *Session) savedLanguage() string {
 
 func (s *Session) SetLanguage(lang string, d DialogTexts) *api.ErrorInfo {
 	if !slices.Contains(Languages, lang) {
-		return &api.ErrorInfo{Kind: api.ErrBadOptions, Message: "незнакомый язык окна: " + lang}
+		return &api.ErrorInfo{Kind: api.ErrBadOptions, Message: "unknown window language: " + lang}
 	}
 	s.mu.Lock()
 	s.dialogs = d.withDefaults()
@@ -100,7 +100,7 @@ func (s *Session) SetLanguage(lang string, d DialogTexts) *api.ErrorInfo {
 	}
 	m, err := loadPrefs(path)
 	if err != nil {
-		s.log.Printf("gui.json: %v — перезаписывается", err)
+		s.log.Printf("gui.json: %v — overwriting", err)
 	}
 	raw, _ := json.Marshal(lang)
 	m["language"] = raw

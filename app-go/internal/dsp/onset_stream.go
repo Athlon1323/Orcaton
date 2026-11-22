@@ -146,7 +146,7 @@ func (s *OnsetStream) at(k int) *[nBands]float32 {
 
 func (s *OnsetStream) Finish() []float32 {
 	if s.done {
-		panic("OnsetStream.Finish: повторный вызов")
+		panic("OnsetStream.Finish: called twice")
 	}
 	s.done = true
 	nOut := s.total / s.hop

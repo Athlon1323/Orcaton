@@ -8,14 +8,14 @@ for a in "$@"; do
         --install) install=1 ;;
         --run) run=1 ;;
         --native) native=1 ;;
-        *) echo "неизвестный ключ: $a" >&2; exit 2 ;;
+        *) echo "unknown option: $a" >&2; exit 2 ;;
     esac
 done
 export PATH="$HOME/.local/node/bin:$HOME/.local/go/bin:$HOME/.local/bin:$PATH"
 export PATH="$PATH:$(go env GOPATH 2>/dev/null)/bin"
 export GOFLAGS=-buildvcs=false GOTOOLCHAIN="${GOTOOLCHAIN:-auto}"
 for c in go node npm wails; do
-    command -v "$c" >/dev/null || { echo "не найдено: $c — поставьте инструменты: bash scripts/install.sh (или app-gui/scripts/install-gui.sh)" >&2; exit 1; }
+    command -v "$c" >/dev/null || { echo "not found: $c — install the tools: bash scripts/install.sh (or app-gui/scripts/install-gui.sh)" >&2; exit 1; }
 done
 cd "$here"
 [ -f go.sum ] || go mod tidy
@@ -24,7 +24,7 @@ wargs=()
 universal=0
 if [ "$(uname -s)" = Darwin ] && [ "$native" = 0 ]; then
     universal=1
-    command -v lipo >/dev/null || { echo "не найдено: lipo — нужны Xcode Command Line Tools (xcode-select --install)" >&2; exit 1; }
+    command -v lipo >/dev/null || { echo "not found: lipo — Xcode Command Line Tools are required (xcode-select --install)" >&2; exit 1; }
     wargs+=(-platform darwin/universal)
 fi
 wails build -skipbindings -trimpath ${wargs[@]+"${wargs[@]}"}
@@ -43,16 +43,16 @@ if [ "$universal" = 1 ]; then
 else
     (cd "$root/app-go" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "$bin/orcaton" ./cmd/orcaton)
 fi
-echo "Команда: $bin/orcaton"
+echo "Command: $bin/orcaton"
 for f in LICENSE NOTICE THIRD-PARTY-NOTICES.md VERSION; do cp -f "$root/$f" "$docs/"; done
 ff="$root/packaging/ffmpeg/$os-$arch"
 if [ -x "$ff/ffmpeg" ] && [ -x "$ff/ffprobe" ]; then
     cp -f "$ff/ffmpeg" "$ff/ffprobe" "$bin/"
     mkdir -p "$docs/ffmpeg-licenses"
     find "$ff" -maxdepth 1 -type f ! -name ffmpeg ! -name ffprobe -exec cp -f {} "$docs/ffmpeg-licenses/" \;
-    echo "FFmpeg вложен: $ff"
+    echo "FFmpeg bundled: $ff"
 else
-    echo "FFmpeg не вложен (нет $ff/ffmpeg, ffprobe) — будет искаться в системе"
+    echo "FFmpeg not bundled (no $ff/ffmpeg, ffprobe) — it will be looked up in the system"
 fi
 
 case "$(uname -s)" in
@@ -63,21 +63,21 @@ case "$(uname -s)" in
             if [ -f "$x" ]; then codesign --force --sign - "$x"; fi
         done
         codesign --force --deep --sign - "$app"
-        codesign --verify --deep --strict "$app" || { echo "подпись Orcaton.app не прошла проверку" >&2; exit 1; }
-        echo "Подпись: ad-hoc ($(lipo -archs "$bin/orcaton" 2>/dev/null || uname -m))"
-        echo "Собрано: $app"
+        codesign --verify --deep --strict "$app" || { echo "Orcaton.app signature verification failed" >&2; exit 1; }
+        echo "Signature: ad-hoc ($(lipo -archs "$bin/orcaton" 2>/dev/null || uname -m))"
+        echo "Built: $app"
         if [ "$install" = 1 ]; then
             mkdir -p "$HOME/Applications"
             rm -rf "$HOME/Applications/Orcaton.app"
             cp -R "$app" "$HOME/Applications/Orcaton.app"
             app="$HOME/Applications/Orcaton.app"
-            echo "Установлено: $app (Launchpad / Finder → Программы пользователя)"
+            echo "Installed: $app (Launchpad / Finder → user Applications)"
         fi
         [ "$run" = 1 ] && open "$app"
         ;;
     *)
         bin="$here/build/bin/orcaton-gui"
-        echo "Собрано: $bin"
+        echo "Built: $bin"
         if [ "$install" = 1 ]; then
             apps="$HOME/.local/share/applications"
             mkdir -p "$apps"
@@ -94,7 +94,7 @@ StartupWMClass=orcaton
 DESK
             chmod +x "$apps/orcaton.desktop"
             command -v update-desktop-database >/dev/null && update-desktop-database "$apps" >/dev/null 2>&1 || true
-            echo "Ярлык: $apps/orcaton.desktop (меню приложений → Orcaton)"
+            echo "Shortcut: $apps/orcaton.desktop (applications menu → Orcaton)"
         fi
         [ "$run" = 1 ] && { nohup "$bin" >/dev/null 2>&1 & }
         ;;

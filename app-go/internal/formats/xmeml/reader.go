@@ -108,10 +108,10 @@ func (imp Importer) Read(path string) (*core.Project, error) {
 func (imp Importer) ReadData(data []byte, path string) (*core.Project, error) {
 	root, err := xmldom.Parse(data, true)
 	if err != nil {
-		return nil, formats.Errorf("%s: невалидный XML: %v", path, err)
+		return nil, formats.Errorf("%s: invalid XML: %v", path, err)
 	}
 	if root.Tag != "xmeml" {
-		return nil, formats.Errorf("%s: корень <%s>, ожидался <xmeml>", path, root.Tag)
+		return nil, formats.Errorf("%s: root <%s>, expected <xmeml>", path, root.Tag)
 	}
 	p := core.NewProject(formats.Stem(path))
 	p.SourceFormat = imp.Name()
@@ -135,7 +135,7 @@ func (imp Importer) ReadData(data []byte, path string) (*core.Project, error) {
 		p.Sequences = append(p.Sequences, seq)
 	}
 	if len(p.Sequences) == 0 {
-		return nil, formats.Errorf("%s: нет ни одной <sequence>", path)
+		return nil, formats.Errorf("%s: no <sequence>", path)
 	}
 	return p, nil
 }
@@ -202,7 +202,7 @@ func media(f *xmldom.Node) *core.MediaRef {
 func sequence(s *xmldom.Node, p *core.Project) (*core.Sequence, error) {
 	rate := rateOf(s, "rate")
 	if rate == nil {
-		return nil, formats.Errorf("У <sequence> нет корректного <rate>")
+		return nil, formats.Errorf("<sequence> has no valid <rate>")
 	}
 	name := textOr(s, "name", "Sequence")
 	if name == "" {

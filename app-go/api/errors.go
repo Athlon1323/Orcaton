@@ -27,12 +27,12 @@ type ErrorInfo struct {
 }
 
 var hints = map[ErrorKind]string{
-	ErrNoFFmpeg:   "Установите FFmpeg или укажите папку с ним в переменной ORCATON_FFMPEG_DIR.",
-	ErrNotFound:   "Проверьте путь; если диск внешний — что он подключён и доступен программе.",
-	ErrBadFormat:  "Нужен таймлайн FCP7 XML (.xml) или .drt.",
-	ErrBadOptions: "Проверьте настройки синхронизации.",
-	ErrBadOutput:  "Выберите другой формат выхода: .drt — только для входа .drt.",
-	ErrWrite:      "Проверьте, что папка существует, доступна для записи и файл не открыт в другой программе.",
+	ErrNoFFmpeg:   "Install FFmpeg or set the folder with it in the ORCATON_FFMPEG_DIR variable.",
+	ErrNotFound:   "Check the path; if the drive is external, make sure it is connected and accessible to the program.",
+	ErrBadFormat:  "An FCP7 XML (.xml) or .drt timeline is required.",
+	ErrBadOptions: "Check the synchronization settings.",
+	ErrBadOutput:  "Choose another output format: .drt is only for .drt input.",
+	ErrWrite:      "Check that the folder exists and is writable, and that the file is not open in another program.",
 }
 
 func Describe(err error) *ErrorInfo {

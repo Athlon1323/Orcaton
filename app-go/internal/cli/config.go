@@ -13,9 +13,9 @@ import (
 
 var (
 	configOpt = opt{names: []string{"--config"}, kind: kStr,
-		help: "Файл настроек вместо orcaton.toml рядом с проектом (файл пользователя читается всё равно)"}
+		help: "Settings file instead of orcaton.toml next to the project (the user file is read anyway)"}
 	noConfigOpt = opt{names: []string{"--no-config"}, kind: kBool, def: false,
-		help: "Не читать orcaton.toml: только флаги и значения по умолчанию"}
+		help: "Do not read orcaton.toml: only flags and defaults"}
 )
 
 func (c *ctx) optOf(key string) (opt, bool) {
@@ -33,7 +33,7 @@ func applySettings(c *ctx, project string) ([]string, int) {
 	}
 	s, err := settings.Load(project, c.Str("config"))
 	if err != nil {
-		c.printf("Ошибка в настройках: %v\n", err)
+		c.printf("Settings error: %v\n", err)
 		return nil, 2
 	}
 	for _, name := range s.Names() {
@@ -47,7 +47,7 @@ func applySettings(c *ctx, project string) ([]string, int) {
 		v, l := s.Get(name)
 		val, err := optValue(o, v)
 		if err != nil {
-			c.printf("Ошибка в настройках: %v\n", &settings.Error{Path: l.Path, Key: name, Msg: err.Error()})
+			c.printf("Settings error: %v\n", &settings.Error{Path: l.Path, Key: name, Msg: err.Error()})
 			return nil, 2
 		}
 		if val != nil {
@@ -76,13 +76,13 @@ func optValue(o opt, v any) (any, error) {
 
 func configCommand() *command {
 	return &command{name: "config",
-		help: "Файл настроек orcaton.toml: где лежит и какие значения опций sync действуют.\n\n" +
-			"  Значения по умолчанию для sync: сначала файл пользователя, поверх — orcaton.toml рядом с\n" +
-			"  таймлайном (или --config), флаг в командной строке важнее файла. --init создаёт шаблон.",
+		help: "Settings file orcaton.toml: where it is and which sync option values are in effect.\n\n" +
+			"  Defaults for sync: first the user file, on top of it — orcaton.toml next to the\n" +
+			"  timeline (or --config); a command-line flag wins over the file. --init creates a template.",
 		args: []arg{{name: "project", file: true, optional: true}},
 		opts: []opt{configOpt,
 			{names: []string{"--init"}, kind: kBool, def: false,
-				help: "Создать шаблон: --config ФАЙЛ, иначе рядом с PROJECT, иначе файл пользователя"}},
+				help: "Create a template: --config FILE, otherwise next to PROJECT, otherwise the user file"}},
 		run: cmdConfig}
 }
 
@@ -94,41 +94,41 @@ func cmdConfig(c *ctx) int {
 	user := settings.UserPath()
 	state := func(p string) string {
 		if _, err := os.Stat(p); err == nil {
-			return p + " (есть)"
+			return p + " (exists)"
 		}
-		return p + " (нет)"
+		return p + " (missing)"
 	}
 	if user == "" {
-		c.printf("Файл пользователя: не читается (%s=%s)\n", settings.EnvVar, os.Getenv(settings.EnvVar))
+		c.printf("User file:    not read (%s=%s)\n", settings.EnvVar, os.Getenv(settings.EnvVar))
 	} else {
-		c.printf("Файл пользователя: %s\n", state(user))
+		c.printf("User file:    %s\n", state(user))
 	}
 	if p := explicit; p != "" || project != "" {
 		if p == "" {
 			p = settings.ProjectPath(project)
 		}
-		c.printf("Файл проекта:      %s\n", state(p))
+		c.printf("Project file: %s\n", state(p))
 	}
 	s, err := settings.Load(project, explicit)
 	if err != nil {
-		c.printf("Ошибка в настройках: %v\n", err)
+		c.printf("Settings error: %v\n", err)
 		return 2
 	}
 	names := s.Names()
 	if len(names) == 0 {
-		c.println("Значения: не заданы — у sync значения по умолчанию.")
+		c.println("Values: none set — sync uses its defaults.")
 		return 0
 	}
-	c.printf("Значения [%s] (флаг командной строки важнее):\n", settings.Section)
+	c.printf("Values [%s] (a command-line flag wins):\n", settings.Section)
 	sync := syncCommand()
 	var bad []error
 	for _, n := range names {
 		v, l := s.Get(n)
 		k, _ := settings.Lookup(n)
 		f, _ := settings.Format(k, v)
-		from := "пользователь"
+		from := "user"
 		if l.Path != user {
-			from = "проект"
+			from = "project"
 		}
 		c.printf("  %s = %s   ← %s\n", n, f, from)
 		for _, o := range sync.opts {
@@ -140,7 +140,7 @@ func cmdConfig(c *ctx) int {
 		}
 	}
 	for _, err := range bad {
-		c.printf("Ошибка в настройках: %v\n", err)
+		c.printf("Settings error: %v\n", err)
 	}
 	if len(bad) > 0 {
 		return 2
@@ -158,11 +158,11 @@ func configInit(c *ctx, project, explicit string) int {
 		path = settings.UserPath()
 	}
 	if path == "" {
-		c.printf("Файл пользователя отключён (%s) — укажите --config ФАЙЛ\n", settings.EnvVar)
+		c.printf("The user file is disabled (%s) — pass --config FILE\n", settings.EnvVar)
 		return 2
 	}
 	if _, err := os.Stat(path); err == nil {
-		c.printf("Уже есть: %s — не перезаписываю\n", path)
+		c.printf("Already exists: %s — not overwriting\n", path)
 		return 1
 	}
 	err := os.MkdirAll(filepath.Dir(path), 0o755)
@@ -170,20 +170,20 @@ func configInit(c *ctx, project, explicit string) int {
 		err = os.WriteFile(path, []byte(configTemplate()), 0o644)
 	}
 	if err != nil {
-		c.printf("Ошибка: %v\n", err)
+		c.printf("Error: %v\n", err)
 		return 1
 	}
-	c.printf("Создан: %s\n", path)
+	c.printf("Created: %s\n", path)
 	return 0
 }
 
 func configTemplate() string {
 	var b strings.Builder
-	b.WriteString(`# orcaton.toml — значения опций "orcaton sync" по умолчанию (docs/go/usage.md, «Файл настроек»).
-# Файл пользователя действует во всех проектах, orcaton.toml рядом с таймлайном — поверх него,
-# флаг в командной строке — важнее обоих. Ключ — имя флага без «--». Чтобы задать значение,
-# уберите «# » в начале строки. Пути Windows — в одинарных кавычках: 'D:\media\set_a'. Относительные
-# пути (search, originals, cache, папки в map) — от папки этого файла.
+	b.WriteString(`# orcaton.toml — default values of "orcaton sync" options (docs/go/usage.md, "Settings file").
+# The user file applies to all projects, orcaton.toml next to the timeline goes on top of it,
+# a command-line flag wins over both. The key is the flag name without "--". To set a value,
+# remove the "# " at the start of the line. Windows paths go in single quotes: 'D:\media\set_a'. Relative
+# paths (search, originals, cache, folders in map) are relative to this file's folder.
 
 [sync]
 `)
@@ -193,9 +193,9 @@ func configTemplate() string {
 			if strings.TrimLeft(o.names[0], "-") != k.Name {
 				continue
 			}
-			help := strings.TrimSuffix(o.help, "; можно несколько раз")
+			help := strings.TrimSuffix(o.help, "; can be repeated")
 			if k.Name == "max-offset" {
-				help += "; 0 — без ограничения"
+				help += "; 0 — no limit"
 			}
 			fmt.Fprintf(&b, "%-30s # %s\n", "# "+k.Name+" = "+templateValue(k, o), help)
 		}

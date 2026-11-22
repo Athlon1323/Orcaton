@@ -121,7 +121,7 @@ func LoadSettings(project string) (Settings, error) {
 
 func (s Settings) validate() error {
 	if d := s.Media.SearchDepth; d < 0 || d > 64 {
-		return &engine.OptionError{Name: "SearchDepth", Msg: fmt.Sprintf("нужно 0…64, получено %d", d)}
+		return &engine.OptionError{Name: "SearchDepth", Msg: fmt.Sprintf("must be 0…64, got %d", d)}
 	}
 	return s.Options.Validate()
 }

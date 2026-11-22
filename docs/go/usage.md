@@ -1,177 +1,182 @@
-# Работа в терминале (`orcaton`)
+# Working in the terminal (`orcaton`)
 
-Команда — **`orcaton`** (или `app-go/scripts/run.*` без установки). То же самое умеет окно
-([docs/gui/user.md](../gui/user.md)) — соответствие кнопок и опций там же.
+**English** · [Deutsch](usage.de.md) · [Русский](usage.ru.md) · [ქართული](usage.ka.md)
 
-## Синхронизация
-1. Монтажная программа: одна камера или рекордер — одна дорожка; экспорт таймлайна
-   (*File → Export → Timeline…*) → **FCP 7 XML V5** (`.xml`) или **DRT** (`.drt`).
-2. Запуск (в **новом** окне терминала после установки; медиа в другом месте — `--map`, см. ниже):
+The command is **`orcaton`** (or `app-go/scripts/run.*` without installing). The window does the same
+([docs/gui/user.md](../gui/user.md)) — the table of buttons and options is there.
+
+## Synchronization
+1. Your editing program: one camera or recorder — one track; export the timeline
+   (*File → Export → Timeline…*) → **FCP 7 XML V5** (`.xml`) or **DRT** (`.drt`).
+2. Run (in a **new** terminal window after installing; media somewhere else — `--map`, see below):
    ```
    orcaton sync "Timeline 1.xml" "Timeline 1-out.xml" --report "Timeline 1-out.csv"
-   orcaton sync "Timeline 1.drt" "Timeline 1-out.drt"          # DRT → DRT (отчёт — сам)
-   orcaton sync "Timeline 1.drt" "out.drt" --map "D:\media\set_a"   # медиа теперь здесь (поиск по имени)
+   orcaton sync "Timeline 1.drt" "Timeline 1-out.drt"          # DRT → DRT (the report is written by itself)
+   orcaton sync "Timeline 1.drt" "out.drt" --map "D:\media\project"   # the media is here now (search by name)
    ```
-3. Монтажная программа: импорт результата (*File → Import → Timeline…*).
+3. Your editing program: import the result (*File → Import → Timeline…*).
 
-| Метка клипа | Значит |
+| Clip label | Meaning |
 |---|---|
-| без метки | синхронизирован **по звуку** (точность — кадр) |
-| **Mango** | поставлен **по часам камеры** — звук не подтвердил (≈1 с) |
-| **Rose** | пару не нашёл — стоит по порядку съёмки |
+| no label | synchronized **by sound** (frame accuracy) |
+| **Mango** | placed **by the camera clock** — the sound did not confirm it (≈1 s) |
+| **Rose** | no match found — placed in shooting order |
 
-Порядок файлов камеры — по номеру в имени (MVI_0001, C0001, 00001…), затем по времени съёмки.
-Файлы без пары — по этому порядку своей камеры, рядом с соседями (и внутри отрезков синхрона); файлов нет на диске — в самый конец; пустот нет. В `.drt` меняются только позиции клипов, длительность и имя таймлайна; метки
-Rose/Mango в `.drt` пока не пишутся — статусы в `*_report.csv`.
+The order of a camera's files is by the number in the name (MVI_0001, C0001, 00001…), then by shooting time.
+Files without a match go in that order of their own camera, next to their neighbours (also inside synced
+stretches); files that are not on disk go to the very end; there are no gaps. In a `.drt` only clip positions, the duration and the
+timeline name change; the Rose/Mango labels are not written to `.drt` yet — the statuses are in `*_report.csv`.
 
-## Опции `sync`
-| Опция | По умолчанию | Зачем |
+## `sync` options
+| Option | Default | Purpose |
 |---|---|---|
-| `--report FILE.csv` | — (для `.drt` — `OUT_report.csv`) | отчёт по каждому файлу |
-| `--map ПАПКА` / `--map "D:/=G:/"` | `$ORCATON_PATH_MAP` | где медиа на этом компьютере: папка с исходниками (поиск по имени) и/или подмена начала путей; `;` — несколько |
-| `--search ПАПКА` | — | то же, что `--map ПАПКА`; можно несколько раз |
-| `--search-depth N` | `6` | на сколько уровней подпапок искать |
-| `-y`, `--yes` | выкл. | не спрашивать про ненайденные файлы — сразу в конец таймлайна |
-| `--keep-paths` | выкл. | с `--map`/`--search`: читать по новым путям, в результат — старые |
-| `--originals ПАПКА` | — | на таймлайне прокси: где оригиналы камер (время съёмки); можно несколько раз |
-| `--unsynced` | `order_time` | `order_time` (по порядку камеры, и внутри отрезков) · `edges` (внутрь отрезка — никогда; после последнего отрезка — в конец) · `end` · `remove` |
-| `--max-gap` / `--keep-gap` | `0` / `0` | какие пустоты убирать и до какой длины сжимать, сек |
-| `--order-by` | `name` | порядок файлов камеры: `name` — номер в имени (MVI_0001, C0001, 00001…), потом время съёмки · `time` — время съёмки / TC, потом имя |
-| `--singles` | `sequential` | файлы без пары: `sequential` — не идут одновременно с другими файлами без пары по звуку (встают рядом с соседями своей камеры, при нужде вставляется время; синхрон не меняется) · `stacked` — каждый по порядку своей камеры, разные камеры могут идти одновременно |
-| `--label` / `--time-label` | `Rose` / `Mango` | цвета меток |
-| `--min-conf` / `--min-ratio` | `12` / `1.5` | строгость совпадения по звуку |
-| `--no-auto-threshold` | — | не поднимать порог до шума проекта |
-| `--min-overlap` / `--max-offset` | `2` / — | мин. перекрытие и окно поиска, сек |
+| `--report FILE.csv` | — (for `.drt` — `OUT_report.csv`) | report for every file |
+| `--map FOLDER` / `--map "D:/=G:/"` | `$ORCATON_PATH_MAP` | where the media is on this computer: a folder with the sources (search by name) and/or a replacement of the start of paths; `;` — several |
+| `--search FOLDER` | — | the same as `--map FOLDER`; may be repeated |
+| `--search-depth N` | `6` | how many levels of subfolders to search |
+| `-y`, `--yes` | off | do not ask about files not found — put them at the end of the timeline at once |
+| `--keep-paths` | off | with `--map`/`--search`: read from the new paths, write the old ones to the result |
+| `--originals FOLDER` | — | the timeline has proxies: where the cameras' originals are (shooting time); may be repeated |
+| `--unsynced` | `order_time` | `order_time` (in the camera's order, also inside stretches) · `edges` (never inside a stretch; after the last stretch — at the end) · `end` · `remove` |
+| `--max-gap` / `--keep-gap` | `0` / `0` | which gaps to remove and to what length to shorten them, sec |
+| `--order-by` | `name` | order of a camera's files: `name` — the number in the name (MVI_0001, C0001, 00001…), then shooting time · `time` — shooting time / TC, then the name |
+| `--singles` | `sequential` | files without a match: `sequential` — do not run at the same time as other files without a match by sound (they stand next to their camera's neighbours, time is inserted when needed; the sync does not change) · `stacked` — each in its camera's order, different cameras may run at the same time |
+| `--label` / `--time-label` | `Rose` / `Mango` | label colors |
+| `--min-conf` / `--min-ratio` | `12` / `1.5` | strictness of the sound match |
+| `--no-auto-threshold` | — | do not raise the threshold up to the project's noise |
+| `--min-overlap` / `--max-offset` | `2` / — | minimum overlap and search window, sec |
 | `--audio-mode` | `mix` | `mix` · `first_stream` · `first_channel` |
-| `--no-file-order` / `--intra-lane` / `--no-record-time` | — | отключить порядок камеры / сравнивать внутри дорожки / не использовать часы |
-| `-j N` | `0` (авто) | сколько файлов декодировать параллельно; авто — половина ядер (2…16), на HDD — до 4 |
-| `--threads N` | `0` (все ядра) | потоков корреляции — меньше, если параллельно работает монтажная программа |
-| `--mem-limit ГБ` | `0` (авто) | потолок памяти: авто — ¾ ОЗУ, от 1 до 7 ГБ; минимум 0,25 ГБ |
-| `--cache ПАПКА` | системная | папка кэша признаков |
-| `--to xmeml\|drt` | по расширению | формат выхода |
-| `--config ФАЙЛ` / `--no-config` | `orcaton.toml` | свой файл настроек вместо `orcaton.toml` рядом с таймлайном / не читать файлы настроек ([ниже](#файл-настроек-orcatontoml)) |
-| `--brief` / `--json` | выкл. | итог одной строкой / в JSON |
-| `--progress auto\|text\|json\|none` | `auto` | прогресс в stderr: `auto` — строкой, только если stderr — терминал и нет `--brief`/`--json`; `json` — событие на строку (`stage`, `title`, `done`, `total`, `file` — тот же поток, что у GUI, [api.md](api.md)) |
+| `--no-file-order` / `--intra-lane` / `--no-record-time` | — | turn off the camera order / compare inside a track / do not use the clocks |
+| `-j N` | `0` (auto) | how many files to decode in parallel; auto — half of the cores (2…16), on an HDD — up to 4 |
+| `--threads N` | `0` (all cores) | correlation threads — fewer if your editing program runs at the same time |
+| `--mem-limit GB` | `0` (auto) | memory ceiling: auto — ¾ of RAM, from 1 to 7 GB; minimum 0.25 GB |
+| `--cache FOLDER` | system | folder of the feature cache |
+| `--to xmeml\|drt` | by extension | output format |
+| `--config FILE` / `--no-config` | `orcaton.toml` | your own settings file instead of the `orcaton.toml` next to the timeline / do not read settings files ([below](#settings-file-orcatontoml)) |
+| `--brief` / `--json` | off | the result as one line / as JSON |
+| `--progress auto\|text\|json\|none` | `auto` | progress on stderr: `auto` — a line, only if stderr is a terminal and there is no `--brief`/`--json`; `json` — one event per line (`stage`, `title`, `done`, `total`, `file` — the same stream as the window gets, [api.md](api.md)) |
 
-Корреляция пар Go-версия считает на всех ядрах процессора (результат от числа ядер не зависит).
-Память: параллельные корреляции ограничены потолком (`--mem-limit`), признак звука считается по
-мере декодирования — проект set_a (384 файла, 106 ГБ медиа) укладывается в ~0,5 ГБ. Что выбрано и
-сколько памяти занято — строка `Ресурсы:` в итоге `sync` (ОЗУ → потолок, потоков, ffmpeg, тип
-диска, версия FFmpeg; пик памяти процесса). `orcaton version` — версия программы и FFmpeg (путь; старше
-4.4 — предупреждение).
+Pair correlation uses all processor cores (the result does not depend on the number of cores).
+Memory: parallel correlations are limited by the ceiling (`--mem-limit`), the sound feature is computed as
+the file is decoded — a project of about 400 files and 100 GB of media fits in ~0.5 GB. What was chosen and
+how much memory is used — the `Resources:` line in the `sync` summary (RAM → cap, threads, ffmpeg, disk
+type, FFmpeg version; the process's peak memory). `orcaton version` — the program and FFmpeg versions (path; older than
+4.4 — a warning).
 
-## Файл настроек `orcaton.toml`
-Значения опций `sync` по умолчанию можно держать в файле — тот же файл читает и окно
-([docs/gui/user.md](../gui/user.md)). Слои, каждый следующий важнее:
-1. значения по умолчанию из таблицы выше;
-2. **файл пользователя** — для всех проектов: Windows `%AppData%\orcaton\orcaton.toml` · macOS
+## Settings file `orcaton.toml`
+Default values of the `sync` options can be kept in a file — the window reads the same file
+([docs/gui/user.md](../gui/user.md)). Layers, each next one wins:
+1. the defaults from the table above;
+2. the **user file** — for all projects: Windows `%AppData%\orcaton\orcaton.toml` · macOS
    `~/Library/Application Support/orcaton/orcaton.toml` · Linux `~/.config/orcaton/orcaton.toml`
-   (`ORCATON_CONFIG` — свой путь, `none` — не читать);
-3. **`orcaton.toml` рядом с таймлайном** (в папке входного `.xml`/`.drt`) или файл из `--config`;
-4. флаг в командной строке; для `map` переменная `ORCATON_PATH_MAP` важнее файла.
+   (`ORCATON_CONFIG` — your own path, `none` — do not read);
+3. **`orcaton.toml` next to the timeline** (in the folder of the input `.xml`/`.drt`) or the file from `--config`;
+4. a command-line flag; for `map` the `ORCATON_PATH_MAP` variable wins over the file.
 ```
-orcaton config "Timeline 1.drt"          # какие файлы читаются и что в них действует
-orcaton config --init                    # шаблон файла пользователя (все ключи закомментированы)
-orcaton config "Timeline 1.drt" --init   # шаблон рядом с таймлайном
+orcaton config "Timeline 1.drt"          # which files are read and what is in effect
+orcaton config --init                    # a user file template (all keys commented out)
+orcaton config "Timeline 1.drt" --init   # a template next to the timeline
 ```
 ```toml
 [sync]
-map = 'D:\media\set_a'      # пути Windows — в одинарных кавычках
+map = 'D:\media\project'        # Windows paths — in single quotes
 min-conf = 10.0
 jobs = 4                        # HDD
-originals = ['Sony', 'D:/Оригиналы']   # относительные пути — от папки этого файла
+originals = ['Sony', 'D:/Originals']   # relative paths — from the folder of this file
 ```
-* Ключи — имена флагов `sync` без `--` (`min_conf` тоже можно): `map`, `search`, `search-depth`,
+* Keys are the `sync` flag names without `--` (`min_conf` also works): `map`, `search`, `search-depth`,
   `keep-paths`, `originals`, `unsynced`, `order-by`, `singles`, `label`, `time-label`, `min-conf`, `min-ratio`,
-  `auto-threshold`, `min-overlap`, `max-offset` (0 — без ограничения), `audio-mode`, `file-order`,
-  `intra-lane`, `record-time`, `max-gap`, `keep-gap`, `jobs`, `threads`, `mem-limit` (ГБ), `cache`,
-  `progress`. Флаги `--no-…` в файле — `false` у ключа без `no-` (`record-time = false`). Вход, выход,
-  отчёт — у каждого запуска свои и в файл не идут.
-* Опечатка в ключе, неверный тип или значение вне диапазона — ошибка с именем файла и ключа, код 2
-  (молча «по умолчанию» не становится). Другие разделы файла Orcaton не читает и не трогает.
-* `sync` печатает строку `Настройки: <файлы>`, если какой-то файл прочитан.
+  `auto-threshold`, `min-overlap`, `max-offset` (0 — no limit), `audio-mode`, `file-order`,
+  `intra-lane`, `record-time`, `max-gap`, `keep-gap`, `jobs`, `threads`, `mem-limit` (GB), `cache`,
+  `progress`. The `--no-…` flags are `false` of the key without `no-` in the file (`record-time = false`). Input, output and
+  report are different for every run and do not go into the file.
+* A typo in a key, a wrong type or a value out of range is an error with the file and key name, code 2
+  (it never silently falls back to the default). Orcaton does not read or touch other sections of the file.
+* `sync` prints a `Settings: <files>` line if any file was read.
 
-## Остальные команды
-| Команда | Что делает |
+## Other commands
+| Command | What it does |
 |---|---|
-| `inspect FILE` | сводка: секвенции, дорожки, FPS, метки, папки |
-| `clips FILE [-t V1] [--csv OUT.csv]` | список клипов (секунды и TC) |
-| `convert IN OUT [--map …]` | XML ⇄ модель ⇄ XML, DRT → XML, перенос путей |
-| `cache [info\|clear\|prune] [--older-than 30d] [--dry-run] [--json]` | кэш признаков (без подкоманды — `info`) |
-| `probe MEDIA`, `offset A B` | данные файла; сдвиг звука B относительно A |
-| `config [ПРОЕКТ] [--config ФАЙЛ] [--init]` | файлы настроек `orcaton.toml` и действующие значения; `--init` — шаблон (не перезаписывает) |
+| `inspect FILE` | summary: sequences, tracks, FPS, labels, folders |
+| `clips FILE [-t V1] [--csv OUT.csv]` | list of clips (seconds and TC) |
+| `convert IN OUT [--map …]` | XML ⇄ model ⇄ XML, DRT → XML, moving paths |
+| `cache [info\|clear\|prune] [--older-than 30d] [--dry-run] [--json]` | the feature cache (no subcommand — `info`) |
+| `probe MEDIA`, `offset A B` | file data; the shift of sound B relative to A |
+| `config [PROJECT] [--config FILE] [--init]` | `orcaton.toml` settings files and the values in effect; `--init` — a template (never overwrites) |
 
-Коды выхода: `0` — успех; `1` — ошибка выполнения (например, не удалось записать результат); `2` — ошибка входа или
-опций, в том числе в `orcaton.toml` (числа вне допустимого диапазона — диапазон виден в `--help`, например `--jobs INTEGER [1<=x<=256]`);
-`3` — не найден FFmpeg (при синхронизации по медиа — сразу, до анализа); `130` — `sync` прерван
-Ctrl+C (процессы ffmpeg завершаются, выход не пишется); `70` — внутренняя ошибка программы (сообщение и стек — пришлите их разработчику).
+Exit codes: `0` — success; `1` — a runtime error (for example, the result could not be written); `2` — an input or
+option error, including one in `orcaton.toml` (numbers out of range — the range is shown in `--help`, for example `--jobs INTEGER [1<=x<=256]`);
+`3` — FFmpeg not found (when syncing by media — at once, before the analysis); `130` — `sync` interrupted
+by Ctrl+C (ffmpeg processes finish, no output is written); `70` — an internal program error (send the message and the stack to the developer).
 
-## Медиа не на своём месте
-Таймлайн хранит полные пути к файлам. Если проект смонтирован на другом компьютере или медиа
-переехали, укажите папку, где они сейчас:
+## Media not in place
+A timeline stores full paths to files. If the project was edited on another computer or the media
+was moved, point to the folder where it is now:
 ```
-orcaton sync "Timeline 1.drt" "out.drt" --map "D:\media\set_a"
-orcaton sync "Timeline 1.xml" "out.xml" --search "E:\Камера A" --search "F:\Звук"
+orcaton sync "Timeline 1.drt" "out.drt" --map "D:\media\project"
+orcaton sync "Timeline 1.xml" "out.xml" --search "E:\Camera A" --search "F:\Sound"
 ```
-* Файлы ищутся **по имени** (без учёта регистра, NFC) во всех подпапках до `--search-depth` (6 —
-  хватает для `PRIVATE/M4ROOT/CLIP` у Sony). Найденные на месте файлы не трогаются.
-* Одинаковые имена в разных папках (`1/C0992.MP4` и `3/C0992.MP4`) различаются по папкам в конце
-  исходного пути (`…/set_a/3/C0992.MP4` → `…/3/`). Если различить нельзя, файл не подставляется и
-  выводится список вариантов — укажите папку точнее.
-* Старая форма `--map "D:/media/set_a/=D:/media/set_a/"` (подмена начала пути) работает как раньше;
-  обе формы можно смешивать: `--map "D:/=G:/;E:\Звук"`.
-* **Что не нашлось** — в терминале программа показывает список и спрашивает: папка, где искать ещё
-  (можно перетащить её в окно), **Enter** — пропустить, `q` — отменить. Пропущенные файлы встают в
-  самый конец таймлайна с прежним путём — в монтажной программе они офлайн и перелинковываются позже
-  (*Relink Clips*). Без терминала (скрипт, `--yes`, `--brief`, `--json`) вопроса нет — сразу пропуск,
-  список выводится предупреждением.
-* В XML-результат пишутся найденные пути (монтажная программа сразу видит медиа; `--keep-paths` — прежние). В
-  `.drt` пути не меняются (патчатся только позиции) — после импорта медиа перелинкуйте в монтажной программе.
-* Поиск медиа есть у `sync`.
+* Files are searched **by name** (case-insensitive, NFC) in all subfolders down to `--search-depth` (6 —
+  enough for `PRIVATE/M4ROOT/CLIP` of Sony). Files found in place are not touched.
+* The same names in different folders (`1/C0992.MP4` and `3/C0992.MP4`) are told apart by the folders at the end of
+  the original path (`…/project/3/C0992.MP4` → `…/3/`). If they cannot be told apart, the file is not substituted and
+  a list of variants is printed — name the folder more exactly.
+* The old form `--map "D:/media/project/=D:/media/project/"` (replacing the start of a path) works as before;
+  both forms can be mixed: `--map "D:/=G:/;E:\Sound"`.
+* **What was not found** — in a terminal the program shows a list and asks: a folder to search further
+  (you can drag it into the window), **Enter** — skip, `q` — cancel. Skipped files go to the
+  very end of the timeline with their old path — in your editing program they are offline and are relinked later
+  (*Relink Clips*). Without a terminal (a script, `--yes`, `--brief`, `--json`) there is no question — they are skipped at once, the
+  list is printed as a warning.
+* The XML result gets the paths that were found (your editing program sees the media at once; `--keep-paths` — the old ones). In a
+  `.drt` paths do not change (only positions are patched) — after the import relink the media in your editing program.
+* Media search is a feature of `sync`.
 
-## Кэш
-Признак звука каждого файла считается один раз и хранится в кэше: Windows
-`%LOCALAPPDATA%\orcaton\cache` · macOS `~/Library/Caches/orcaton` · Linux `~/.cache/orcaton` (или
-`ORCATON_CACHE_DIR`, `--cache`). Если синхронизация оборвалась, при повторе готовое берётся из кэша.
-Команды работают из любой папки; удаляются только файлы кэша Orcaton:
+## Cache
+The sound feature of each file is computed once and kept in the cache: Windows
+`%LOCALAPPDATA%\orcaton\cache` · macOS `~/Library/Caches/orcaton` · Linux `~/.cache/orcaton` (or
+`ORCATON_CACHE_DIR`, `--cache`). If a sync was interrupted, a repeat takes the finished work from the cache.
+The commands work from any folder; only Orcaton cache files are deleted:
 ```
-orcaton cache                         # где кэш и сколько занимает (= cache info)
-orcaton cache clear                   # очистить всё (признаки пересчитаются при следующем sync)
-orcaton cache prune --older-than 30d  # только давно не использованное и обрывки *.tmp
+orcaton cache                         # where the cache is and how much it takes (= cache info)
+orcaton cache clear                   # clear everything (features are recomputed at the next sync)
+orcaton cache prune --older-than 30d  # only what has not been used for long and *.tmp leftovers
 ```
 
-## Переменные окружения
-| Переменная | Зачем |
+## Environment variables
+| Variable | Purpose |
 |---|---|
-| `ORCATON_PATH_MAP` | `--map` по умолчанию (папки и/или правила) |
-| `ORCATON_CACHE_DIR` | папка кэша |
-| `ORCATON_CONFIG` | файл настроек пользователя вместо системной папки; `none` — не читать |
-| `ORCATON_FFMPEG_DIR` | папка с ffmpeg/ffprobe — важнее всего; дальше: папка программы, PATH, типовые папки |
-| `ORCATON_CPUPROFILE` | (разработчику) записать профиль CPU для `go tool pprof` |
+| `ORCATON_PATH_MAP` | default `--map` (folders and/or rules) |
+| `ORCATON_CACHE_DIR` | cache folder |
+| `ORCATON_CONFIG` | user settings file instead of the system folder; `none` — do not read |
+| `ORCATON_FFMPEG_DIR` | folder with ffmpeg/ffprobe — wins over everything; then: the program folder, PATH, usual folders |
+| `ORCATON_CPUPROFILE` | (for developers) write a CPU profile for `go tool pprof` |
 
-## Отчёт
-`--report` пишет CSV (`;`, UTF-8 с BOM — открывается в Excel): по каждому файлу — статус, с кем
-совпал, уверенность (z), время записи и причина, если не синхронизирован. Для выхода `.drt` отчёт
-`OUT_report.csv` создаётся всегда — в `.drt` пока не пишутся метки.
+## Report
+`--report` writes a CSV (`;`, UTF-8 with BOM — opens in Excel): for every file — the status, whom it
+matched, the confidence (z), the recording time and the reason if it is not synchronized. For a `.drt` output the report
+`OUT_report.csv` is always created — labels are not written to `.drt` yet.
 
-## Вопросы и решения
-**DRT: где метки Rose/Mango?** В `.drt` пока не пишутся — статусы в `*_report.csv`. Нужны
-метки на таймлайне — выберите выход `.xml`.
+## Questions and answers
+**DRT: where are the Rose/Mango labels?** They are not written to `.drt` yet — the statuses are in `*_report.csv`. If you need
+labels on the timeline, choose the `.xml` output.
 
-**DRT из XML?** Нельзя: `.drt` пишется правкой исходного `.drt`. Экспортируйте таймлайн в `.drt`.
-DRT → XML работает.
+**DRT from XML?** Not possible: a `.drt` is written by patching the source `.drt`. Export the timeline as `.drt`.
+DRT → XML works.
 
-**Медиа на другом диске, результат нужен на исходном компьютере.** `--map "D:/Проект/=G:/Проект/"`
-(или `--map ПАПКА`) + `--keep-paths` — читать по новым путям, в результат записать старые.
+**The media is on another drive, the result is needed on the original computer.** `--map "D:/Project/=G:/Project/"`
+(or `--map FOLDER`) + `--keep-paths` — read from the new paths, write the old ones to the result.
 
-**На таймлайне прокси (ProRes из монтажной программы).** У прокси нет времени съёмки (у них время рендера) —
-укажите оригиналы: `--originals "G:\Карта_Sony"`. Без времени файлы без пары встанут хуже.
+**The timeline has proxies (ProRes from your editing program).** Proxies have no shooting time (theirs is the render time) —
+point to the originals: `--originals "G:\Sony_card"`. Without the time, files without a match are placed worse. The shooting time
+is also taken from the file name (`DJI_20261003231144_0085_D.MP4`; recorder `031026_191644_TrMic.WAV` — the order of the
+date is chosen by the other files) and from the recorder's WAV (BWF).
 
-**Файл «не нашёл пару» (Rose).** Причины: камера не слышала общего звука, перекрытие с другими
-меньше 2 с, тишина. Если есть оригиналы — `--originals` поставит его по часам камеры (Mango).
-Причина каждого файла — в отчёте.
+**A file "found no match" (Rose).** Causes: the camera did not hear the common sound, the overlap with the others is
+less than 2 s, silence. If you have the originals, `--originals` will place it by the camera clock (Mango).
+The reason for every file is in the report.
 
-**Сколько дорожек можно?** Ограничения нет; время растёт с числом файлов (сотни — минуты).
+**How many tracks are allowed?** No limit; time grows with the number of files (hundreds — minutes).
 
-**Медленно в первый раз.** FFmpeg читает файлы целиком; число параллельных декодеров выбирается по
-ядрам и типу диска (HDD — до 4). Работает монтажная программа параллельно — `--threads` поменьше.
+**Slow the first time.** FFmpeg reads the files in full; the number of parallel decoders is chosen by the
+cores and the disk type (HDD — up to 4). If your editing program runs at the same time — lower `--threads`.

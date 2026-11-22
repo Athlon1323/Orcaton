@@ -4,7 +4,7 @@
 
 > **Status: Alpha.** Das Fenster funktioniert bereits: Timeline öffnen → Medien
 > finden → synchronisieren → speichern. Mit *(später)* markiert ist, was es im Fenster noch nicht gibt.
-> Dasselbe kann das Terminal — [docs/go/usage.md](../go/usage.md) (auf Russisch). **Das Terminal bleibt**:
+> Dasselbe kann das Terminal — [docs/go/usage.de.md](../go/usage.de.md). **Das Terminal bleibt**:
 > Fenster und `orcaton sync` laufen auf demselben Kern und liefern dasselbe Ergebnis.
 
 ## Das Fenster öffnen
@@ -174,7 +174,7 @@ erhalten — sofort nach der Änderung, in Ihrer Datei `orcaton.toml` (der Pfad 
 | Bericht speichern | `--report` | für `.drt` — immer |
 
 Einstellungen von Fenster und Terminal sind gemeinsam: Ihre `orcaton.toml` und die neben der Timeline
-([usage.md](../go/usage.md#файл-настроек-orcatontoml), auf Russisch); was im Fenster geändert wird, gilt
+([usage.de.md](../go/usage.de.md#einstellungsdatei-orcatontoml)); was im Fenster geändert wird, gilt
 auch für `orcaton sync`. Die Sprache des Fensters ist keine Terminal-Einstellung — sie steht in `gui.json`.
 
 ## Über und Entwicklerwerkzeuge
@@ -186,7 +186,7 @@ auch für `orcaton sync`. Die Sprache des Fensters ist keine Terminal-Einstellun
   (`%LocalAppData%\orcaton\logs`), Cache.
 
 ## Nur im Terminal
-`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` für Skripte — [docs/go/usage.md](../go/usage.md) (auf Russisch).
+`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` für Skripte — [docs/go/usage.de.md](../go/usage.de.md).
 
 ## Fragen
 **Das Fenster meldet „FFmpeg ist nicht installiert“.** Orcaton liest den Ton mit FFmpeg — einem freien

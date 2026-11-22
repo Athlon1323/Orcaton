@@ -13,7 +13,7 @@ type OptionCheck struct {
 	Error *api.ErrorInfo `json:"error,omitempty"`
 }
 
-var optionName = regexp.MustCompile(`опция ([A-Za-z]+)`)
+var optionName = regexp.MustCompile(`option ([A-Za-z]+)`)
 
 var engineField = map[string]string{"IdleGapSec": "maxGapSec", "IdleKeepSec": "keepGapSec"}
 

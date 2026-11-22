@@ -29,8 +29,56 @@ func (e *Engine) buildUnits(seq *core.Sequence) []*Unit {
 	for _, k := range order {
 		units = append(units, newUnit(len(units), k.kind == "media", groups[k]))
 	}
+	mergeTakeFolders(units)
 	splitMixedFolders(units)
 	return units
+}
+
+func mergeTakeFolders(units []*Unit) {
+	type key struct{ lane, parent, ext, shape string }
+	count := map[string]int{}
+	for _, u := range units {
+		count[u.Device]++
+	}
+	groups := map[key][]*Unit{}
+	var order []key
+	for _, u := range units {
+		folder := strings.TrimPrefix(u.Device, u.Lane+"|")
+		ext := unitExt(u)
+		if count[u.Device] != 1 || ext == "" || folder == "" || folder == u.Device {
+			continue
+		}
+		parent := formats.ParentPathOS(folder)
+		if parent == folder || parent == "." || parent == "" {
+			continue
+		}
+		k := key{u.Lane, parent, ext, takeShape(u.Name())}
+		if _, ok := groups[k]; !ok {
+			order = append(order, k)
+		}
+		groups[k] = append(groups[k], u)
+	}
+	for _, k := range order {
+		if len(groups[k]) < 2 {
+			continue
+		}
+		for _, u := range groups[k] {
+			u.Device = k.lane + "|" + k.parent
+		}
+	}
+}
+
+func takeShape(name string) string {
+	stem := formats.Casefold(strings.TrimSuffix(name, filepath.Ext(name)))
+	if i := strings.LastIndexAny(stem, "_-"); i > 0 {
+		stem = stem[:i]
+	}
+	return strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return '#'
+		}
+		return r
+	}, stem)
 }
 
 func splitMixedFolders(units []*Unit) {
@@ -221,6 +269,7 @@ func (e *Engine) loadRecordTimes(ctx context.Context, units []*Unit) error {
 		if rt := src.Get(u.Clips[0].Media.Name, *u.MediaPath); rt != nil {
 			v := rt.Start
 			u.RecTime = &v
+			u.recAlt = rt.Alt
 		}
 		mu.Lock()
 		done++
@@ -230,6 +279,7 @@ func (e *Engine) loadRecordTimes(ctx context.Context, units []*Unit) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	resolveNameDates(units)
 	n := 0
 	for _, u := range units {
 		if u.RecTime != nil {
@@ -271,15 +321,15 @@ func (e *Engine) loadFeatures(ctx context.Context, units []*Unit) error {
 		m := u.Clips[0].Media
 		switch {
 		case m != nil && m.Offline:
-			u.setError(ReasonOffline, "файла нет на диске (офлайн в Resolve)")
+			u.setError(ReasonOffline, "the file is not on disk")
 			u.Offline = true
 		case !u.HasAudio:
-			u.setError(ReasonNoAudio, "нет звука")
+			u.setError(ReasonNoAudio, "no audio")
 		case u.MediaPath == nil || *u.MediaPath == "":
-			u.setError(ReasonNoPath, "нет пути к файлу")
+			u.setError(ReasonNoPath, "no file path")
 			u.Offline = true
 		case !src.Has(*u.MediaPath):
-			u.setError(ReasonNotFound, "файл не найден (проверьте --map)")
+			u.setError(ReasonNotFound, "file not found (check --map)")
 			u.Offline = true
 		default:
 			paths = append(paths, *u.MediaPath)
@@ -306,12 +356,12 @@ func (e *Engine) loadFeatures(ctx context.Context, units []*Unit) error {
 			continue
 		}
 		if err, ok := errs[*u.MediaPath]; ok {
-			u.setError(ReasonDecodeError, fmt.Sprintf("ошибка декодирования: %v", err))
+			u.setError(ReasonDecodeError, fmt.Sprintf("decode error: %v", err))
 			continue
 		}
 		raw, err := src.Get(*u.MediaPath)
 		if err != nil {
-			u.setError(ReasonDecodeError, fmt.Sprintf("ошибка декодирования: %v", err))
+			u.setError(ReasonDecodeError, fmt.Sprintf("decode error: %v", err))
 			continue
 		}
 		full := dsp.MaskOnsetArtifacts(raw, fps, 0.15, 0.05)
@@ -328,7 +378,7 @@ func (e *Engine) loadFeatures(ctx context.Context, units []*Unit) error {
 			u.Feature = full[i0:i1]
 		}
 		if u.Feature == nil || float64(len(u.Feature)) < e.O.MinOverlapSec*fps {
-			u.setError(ReasonShortAudio, "слишком короткий звук")
+			u.setError(ReasonShortAudio, "audio is too short")
 			u.Feature = nil
 		}
 	}

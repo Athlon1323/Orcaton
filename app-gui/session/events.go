@@ -26,8 +26,8 @@ func errInfo(err error) *api.ErrorInfo { return api.Describe(err) }
 func (s *Session) recoverTo(dst **api.ErrorInfo) {
 	if r := recover(); r != nil {
 		s.log.Printf("panic: %v\n%s", r, debug.Stack())
-		*dst = &api.ErrorInfo{Kind: api.ErrFailed, Message: fmt.Sprintf("внутренняя ошибка окна: %v", r),
-			Hint: "Скопируйте подробности (Copy details) и журнал из Developer tools."}
+		*dst = &api.ErrorInfo{Kind: api.ErrFailed, Message: fmt.Sprintf("internal window error: %v", r),
+			Hint: "Copy the details (Copy details) and the log from Developer tools."}
 	}
 }
 

@@ -22,7 +22,7 @@ func (e *Engine) Sync(ctx context.Context, project *core.Project, seqIndex int) 
 		if project != nil {
 			n = len(project.Sequences)
 		}
-		return nil, fmt.Errorf("секвенция №%d не найдена: в проекте их %d", seqIndex, n)
+		return nil, fmt.Errorf("sequence #%d not found: the project has %d", seqIndex, n)
 	}
 	out := project.Clone()
 	seq := out.Sequences[seqIndex]
@@ -96,6 +96,9 @@ func (e *Engine) Sync(ctx context.Context, project *core.Project, seqIndex int) 
 func (e *Engine) solveAll(ctx context.Context, units []*Unit, edges []*Edge) ([][]int, error) {
 	const steps = 3
 	e.emit(StageSolve, 0, steps, "")
+	if e.O.RecordTime {
+		e.fixSplitStamps(units)
+	}
 	comps := e.solve(units, edges)
 	comps = e.pruneClockOutliers(units, comps)
 	e.emit(StageSolve, 1, steps, "")
@@ -113,6 +116,7 @@ func (e *Engine) solveAll(ctx context.Context, units []*Unit, edges []*Edge) ([]
 		}
 		e.fixEndStamps(units)
 		comps = e.mergeByClock(units, comps)
+		comps = e.dropClockOutliers(units, comps)
 		e.timePass(units, comps)
 	}
 	e.checkConflicts(units, comps)

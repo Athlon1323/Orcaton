@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -227,17 +228,61 @@ func (e *Engine) spanned(w, v *Unit) bool {
 	return true
 }
 
+func (e *Engine) fixSplitStamps(units []*Unit) {
+	devs, by := byDevice(units)
+	for _, d := range devs {
+		var lst []*Unit
+		for _, u := range by[d] {
+			if u.RecTime != nil && u.DupOf == nil {
+				lst = append(lst, u)
+			}
+		}
+		sort.SliceStable(lst, func(i, j int) bool { return *lst[i].RecTime < *lst[j].RecTime })
+		for i := len(lst) - 2; i >= 0; i-- {
+			w, v := lst[i], lst[i+1]
+			gap := *v.RecTime - *w.RecTime - w.dur
+			if gap > e.O.SpannedTolSec && gap <= autoSplitGapSec && sameCut(w, v) {
+				t := *v.RecTime - w.dur
+				w.RecTime = &t
+				e.Report.SplitStamps++
+			}
+		}
+	}
+}
+
+const autoSplitGapSec = 300.0
+
+var sizeOf = fileSize
+
+func sameCut(w, v *Unit) bool {
+	sw := sizeOf(w)
+	return fatSplit(sw) && sizeOf(v) == sw && math.Abs(w.dur-v.dur) <= 0.05
+}
+
+func fatSplit(size int64) bool {
+	for _, lim := range []int64{1 << 31, 1 << 32} {
+		if size <= lim && size >= lim-64<<20 {
+			return true
+		}
+	}
+	return false
+}
+
 type clockKey struct {
 	ci  int
 	dev string
 }
 
-type clockVal struct{ off, dur float64 }
+type clockVal struct {
+	off, dur float64
+	solo     bool
+}
 
 func (e *Engine) clocks(units []*Unit) map[clockKey]clockVal {
 	var order []clockKey
 	calib := map[clockKey][]float64{}
 	durs := map[clockKey][]float64{}
+	who := map[clockKey][]int{}
 	for _, u := range units {
 		if u.Status == core.StatusSynced && u.RecTime != nil && u.Position != nil {
 			k := clockKey{u.Component, u.Device}
@@ -246,8 +291,10 @@ func (e *Engine) clocks(units []*Unit) map[clockKey]clockVal {
 			}
 			calib[k] = append(calib[k], num.Float(u.Position)-*u.RecTime)
 			durs[k] = append(durs[k], u.dur)
+			who[k] = append(who[k], u.UID)
 		}
 	}
+	ratio := e.treeRatios()
 	clock := map[clockKey]clockVal{}
 	for _, k := range order {
 		offs := calib[k]
@@ -257,10 +304,57 @@ func (e *Engine) clocks(units []*Unit) map[clockKey]clockVal {
 		}
 		e.Report.ClockSpread = math.Max(e.Report.ClockSpread, mx-mn)
 		if c, ok := robustClock(offs, e.O.ClockToleranceSec); ok {
-			clock[k] = clockVal{c, median(durs[k])}
+			clock[k] = clockVal{c, median(durs[k]), !e.clockTrusted(who[k], ratio)}
 		}
 	}
 	return clock
+}
+
+type camShift struct {
+	shift float64
+	solo  bool
+}
+
+func clockJoinShift(votes []camShift, tol float64) (float64, bool) {
+	sort.Slice(votes, func(i, j int) bool { return votes[i].shift < votes[j].shift })
+	shifts := make([]float64, len(votes))
+	for i, v := range votes {
+		shifts[i] = v.shift
+	}
+	shift, ok := consensusShift(shifts, tol)
+	if !ok {
+		return 0, false
+	}
+	n := 0
+	for _, v := range votes {
+		if math.Abs(v.shift-shift) <= tol {
+			if !v.solo {
+				return shift, true
+			}
+			n++
+		}
+	}
+	return shift, n >= 2
+}
+
+const clockSoloRatio = 2.0
+
+func (e *Engine) treeRatios() map[int]float64 {
+	out := map[int]float64{}
+	for _, ed := range e.Report.TreeEdges {
+		for _, i := range []int{ed.A, ed.B} {
+			out[i] = math.Max(out[i], ed.Res.Ratio)
+		}
+	}
+	return out
+}
+
+func (e *Engine) clockTrusted(uids []int, ratio map[int]float64) bool {
+	if len(uids) != 1 {
+		return true
+	}
+	r, ok := ratio[uids[0]]
+	return !ok || r >= clockSoloRatio
 }
 
 func robustClock(offs []float64, tol float64) (float64, bool) {
@@ -285,6 +379,7 @@ func (e *Engine) mergeByClock(units []*Unit, comps [][]int) [][]int {
 		return comps
 	}
 	clock := e.clocks(units)
+	chains := e.recordingChains(units)
 	tol := e.O.ClockToleranceSec
 	groups := make([][]int, len(comps))
 	for i, c := range comps {
@@ -294,66 +389,71 @@ func (e *Engine) mergeByClock(units []*Unit, comps [][]int) [][]int {
 	for i := range alive {
 		alive[i] = true
 	}
-	changed := true
-	for changed {
-		changed = false
-		for a := 0; a < len(groups); a++ {
-			for b := a + 1; b < len(groups); b++ {
-				if !(alive[a] && alive[b]) {
-					continue
-				}
-				var shifts []float64
-				for k, ca := range clock {
-					if k.ci != a {
+	for _, chainsOnly := range []bool{true, false} {
+		changed := true
+		for changed {
+			changed = false
+			for a := 0; a < len(groups); a++ {
+				for b := a + 1; b < len(groups); b++ {
+					if !(alive[a] && alive[b]) {
 						continue
 					}
-					if cb, ok := clock[clockKey{b, k.dev}]; ok && e.stampOK(k.dev, ca.dur, cb.dur) {
-						shifts = append(shifts, ca.off-cb.off)
-					}
-				}
-				if len(shifts) == 0 {
-					continue
-				}
-				shift, ok := consensusShift(shifts, tol)
-				if !ok {
-					continue
-				}
-				shift = e.snapSpanned(units, groups[a], groups[b], shift)
-				outlier := func(i int) bool { return e.clockOutlier(units[i], clock) }
-				shift, drop, ok := e.fitJoin(units, groups[a], groups[b], shift, outlier)
-				if !ok {
-					continue
-				}
-				if len(drop) > 0 {
-					groups[a], groups[b] = e.dropUnits(units, groups[a], drop), e.dropUnits(units, groups[b], drop)
-				}
-				sq := num.FloatLimit(shift, 1_000_000)
-				for _, j := range groups[b] {
-					units[j].Position = num.Add(units[j].Position, sq)
-					units[j].Component = a
-				}
-				groups[a] = append(groups[a], groups[b]...)
-				alive[b] = false
-				for k, c := range clock {
-					if k.ci == b {
-						delete(clock, k)
-						if _, ok := clock[clockKey{a, k.dev}]; !ok {
-							clock[clockKey{a, k.dev}] = clockVal{c.off + shift, c.dur}
+					var shifts []camShift
+					for k, ca := range clock {
+						if k.ci != a {
+							continue
+						}
+						if cb, ok := clock[clockKey{b, k.dev}]; ok && e.stampOK(k.dev, ca.dur, cb.dur) {
+							shifts = append(shifts, camShift{ca.off - cb.off, ca.solo || cb.solo})
 						}
 					}
+					shift, ok := chainShift(chains, units, groups[a], groups[b], tol)
+					if !ok {
+						if chainsOnly || len(shifts) == 0 {
+							continue
+						}
+						if shift, ok = clockJoinShift(shifts, tol); !ok {
+							continue
+						}
+						shift = e.snapSpanned(units, groups[a], groups[b], shift)
+					}
+					outlier := func(i int) bool { return e.clockOutlier(units[i], clock) }
+					shift, drop, ok := e.fitJoin(units, groups[a], groups[b], shift, outlier)
+					if !ok {
+						continue
+					}
+					if len(drop) > 0 {
+						groups[a], groups[b] = e.dropUnits(units, groups[a], drop), e.dropUnits(units, groups[b], drop)
+					}
+					sq := num.FloatLimit(shift, 1_000_000)
+					for _, j := range groups[b] {
+						units[j].Position = num.Add(units[j].Position, sq)
+						units[j].Component = a
+					}
+					groups[a] = append(groups[a], groups[b]...)
+					alive[b] = false
+					e.regroupClock(units, clock, a, b, shift, groups[a])
+					e.Report.ClockMerged++
+					changed = true
 				}
-				e.Report.ClockMerged++
-				changed = true
 			}
 		}
 	}
 	var out [][]int
+	var outClock []map[string]float64
 	for i, g := range groups {
 		if alive[i] {
 			out = append(out, g)
+			offs := map[string]float64{}
+			for k, c := range clock {
+				if k.ci == i && !c.solo {
+					offs[k.dev] = c.off
+				}
+			}
+			outClock = append(outClock, offs)
 		}
 	}
-	sortComps(units, out)
+	sortCompsByClock(units, out, outClock)
 	for ci, comp := range out {
 		mn := qOr0(units[comp[0]].Position)
 		for _, i := range comp[1:] {
@@ -365,6 +465,155 @@ func (e *Engine) mergeByClock(units []*Unit, comps [][]int) [][]int {
 		}
 	}
 	return out
+}
+
+func (e *Engine) regroupClock(units []*Unit, clock map[clockKey]clockVal, a, b int, shift float64, g []int) {
+	prev := map[string]clockVal{}
+	for k, c := range clock {
+		switch k.ci {
+		case b:
+			if _, ok := prev[k.dev]; !ok {
+				prev[k.dev] = clockVal{c.off + shift, c.dur, c.solo}
+			}
+			delete(clock, k)
+		case a:
+			prev[k.dev] = c
+			delete(clock, k)
+		}
+	}
+	var devs []string
+	offs, durs := map[string][]float64{}, map[string][]float64{}
+	who := map[string][]int{}
+	for _, i := range g {
+		u := units[i]
+		if u.Status != core.StatusSynced || u.RecTime == nil || u.Position == nil {
+			continue
+		}
+		if _, ok := offs[u.Device]; !ok {
+			devs = append(devs, u.Device)
+		}
+		offs[u.Device] = append(offs[u.Device], num.Float(u.Position)-*u.RecTime)
+		durs[u.Device] = append(durs[u.Device], u.dur)
+		who[u.Device] = append(who[u.Device], i)
+	}
+	ratio := e.treeRatios()
+	for _, d := range devs {
+		if c, ok := robustClock(offs[d], e.O.ClockToleranceSec); ok {
+			clock[clockKey{a, d}] = clockVal{c, median(durs[d]), !e.clockTrusted(who[d], ratio)}
+		} else if p, had := prev[d]; had {
+			p.solo = true
+			clock[clockKey{a, d}] = p
+		}
+	}
+}
+
+type chainPos struct {
+	chain int
+	at    float64
+}
+
+func (e *Engine) recordingChains(units []*Unit) map[*Unit]chainPos {
+	out := map[*Unit]chainPos{}
+	devs, by := byDevice(units)
+	chain := 0
+	for _, d := range devs {
+		var lst []*Unit
+		for _, u := range by[d] {
+			if u.RecTime != nil && u.DupOf == nil {
+				lst = append(lst, u)
+			}
+		}
+		sort.SliceStable(lst, func(i, j int) bool { return *lst[i].RecTime < *lst[j].RecTime })
+		for i, u := range lst {
+			if i > 0 && e.spanned(lst[i-1], u) {
+				out[u] = chainPos{chain, out[lst[i-1]].at + lst[i-1].dur}
+				continue
+			}
+			chain++
+			out[u] = chainPos{chain, 0}
+		}
+	}
+	return out
+}
+
+func chainShift(chains map[*Unit]chainPos, units []*Unit, ga, gb []int, tol float64) (float64, bool) {
+	var shifts []float64
+	for _, i := range ga {
+		ci, ok := chains[units[i]]
+		if !ok || units[i].Position == nil {
+			continue
+		}
+		for _, j := range gb {
+			cj, ok := chains[units[j]]
+			if !ok || cj.chain != ci.chain || units[j].Position == nil {
+				continue
+			}
+			shifts = append(shifts, fOr0(units[i].Position)-ci.at-fOr0(units[j].Position)+cj.at)
+		}
+	}
+	if len(shifts) == 0 {
+		return 0, false
+	}
+	return consensusShift(shifts, tol)
+}
+
+func sortCompsByClock(units []*Unit, comps [][]int, offs []map[string]float64) {
+	idx := make([]int, len(comps))
+	for i := range idx {
+		idx[i] = i
+	}
+	keys := make([]OrderKey, len(comps))
+	start := make([]float64, len(comps))
+	for i, c := range comps {
+		keys[i] = minOrder(units, c)
+		start[i] = math.Inf(1)
+		for _, j := range c {
+			start[i] = math.Min(start[i], fOr0(units[j].Position))
+		}
+	}
+	sort.SliceStable(idx, func(a, b int) bool { return keys[idx[a]].Before(keys[idx[b]]) })
+	later := func(x, y int) (bool, bool) {
+		p, n := 0, 0
+		for d, ox := range offs[x] {
+			oy, ok := offs[y][d]
+			if !ok {
+				continue
+			}
+			switch dt := (start[y] - oy) - (start[x] - ox); {
+			case dt > 0:
+				p++
+			case dt < 0:
+				n++
+			}
+		}
+		return p > n, p != n
+	}
+	moveEarlier := func() bool {
+		for i := 0; i < len(idx); i++ {
+			for j := i + 1; j < len(idx); j++ {
+				if after, ok := later(idx[j], idx[i]); ok && after {
+					v := idx[j]
+					copy(idx[i+1:j+1], idx[i:j])
+					idx[i] = v
+					return true
+				}
+			}
+		}
+		return false
+	}
+	seen := map[string]bool{}
+	for pass := 0; pass < len(idx)*len(idx); pass++ {
+		key := fmt.Sprint(idx)
+		if seen[key] || !moveEarlier() {
+			break
+		}
+		seen[key] = true
+	}
+	tmp := make([][]int, len(comps))
+	for i, k := range idx {
+		tmp[i] = comps[k]
+	}
+	copy(comps, tmp)
 }
 
 func (e *Engine) fixEndStamps(units []*Unit) {
@@ -521,9 +770,6 @@ func (e *Engine) fitJoin(units []*Unit, ga, gb []int, shift float64, outlier fun
 			return shift, nil, false
 		}
 	}
-	if len(drop) == 0 || len(drop) > maxClockDrops {
-		return shift, nil, false
-	}
 	keep := func(g []int) []int {
 		var out []int
 		for _, i := range g {
@@ -533,9 +779,28 @@ func (e *Engine) fitJoin(units []*Unit, ga, gb []int, shift float64, outlier fun
 		}
 		return out
 	}
-	s, ok := e.nearestJoin(units, keep(ga), keep(gb), shift)
+	try := func() (float64, bool) {
+		if len(drop) == 0 || len(drop) > maxClockDrops {
+			return shift, false
+		}
+		return e.nearestJoin(units, keep(ga), keep(gb), shift)
+	}
+	s, ok := try()
 	if !ok {
-		return shift, nil, false
+		n := len(drop)
+		for _, g := range [][]int{ga, gb} {
+			for _, i := range g {
+				if outlier(i) && e.clockDev(units[i], g, units) > clockJumpSec {
+					drop[i] = true
+				}
+			}
+		}
+		if len(drop) == n {
+			return shift, nil, false
+		}
+		if s, ok = try(); !ok {
+			return shift, nil, false
+		}
 	}
 	var ids []int
 	for i := range drop {
@@ -543,6 +808,24 @@ func (e *Engine) fitJoin(units []*Unit, ga, gb []int, shift float64, outlier fun
 	}
 	sort.Ints(ids)
 	return s, ids, true
+}
+
+func (e *Engine) clockDev(u *Unit, g []int, units []*Unit) float64 {
+	if u.RecTime == nil || u.Position == nil {
+		return 0
+	}
+	var offs []float64
+	for _, j := range g {
+		x := units[j]
+		if x == u || x.Device != u.Device || x.Status != core.StatusSynced || x.RecTime == nil || x.Position == nil {
+			continue
+		}
+		offs = append(offs, num.Float(x.Position)-*x.RecTime)
+	}
+	if len(offs) == 0 {
+		return 0
+	}
+	return math.Abs(num.Float(u.Position) - *u.RecTime - median(offs))
 }
 
 func (e *Engine) nearestJoin(units []*Unit, ga, gb []int, shift float64) (float64, bool) {
@@ -599,6 +882,90 @@ func (e *Engine) clockOutlier(u *Unit, clock map[clockKey]clockVal) bool {
 	return ok && math.Abs(num.Float(u.Position)-*u.RecTime-c.off) > e.O.ClockToleranceSec
 }
 
+func (e *Engine) dropClockOutliers(units []*Unit, comps [][]int) [][]int {
+	if !e.O.RecordTime || !e.O.FileOrder {
+		return comps
+	}
+	ratio := e.treeRatios()
+	var res [][]int
+	for _, c := range comps {
+		var drop []int
+		for _, i := range e.clockOutliersIn(units, c) {
+			if r, ok := ratio[i]; ok && r < clockSoloRatio {
+				drop = append(drop, i)
+			}
+		}
+		if len(drop) > 0 {
+			drop = append(drop, e.orphans(units, c, drop)...)
+			c = e.dropUnits(units, c, drop)
+		}
+		if len(c) < 2 {
+			for _, i := range c {
+				u := units[i]
+				u.Status, u.Position, u.Component = core.StatusUnsynced, nil, -1
+				u.setError(ReasonNoMatch, "pair removed: the partner's audio contradicted the camera clock")
+			}
+			continue
+		}
+		res = append(res, c)
+	}
+	for ci, c := range res {
+		mn := qOr0(units[c[0]].Position)
+		for _, i := range c[1:] {
+			mn = num.Min(mn, qOr0(units[i].Position))
+		}
+		for _, i := range c {
+			units[i].Component = ci
+			units[i].Position = num.Sub(qOr0(units[i].Position), mn)
+		}
+	}
+	return res
+}
+
+func (e *Engine) orphans(units []*Unit, g []int, drop []int) []int {
+	gone := map[int]bool{}
+	for _, i := range drop {
+		gone[i] = true
+	}
+	var out []int
+	for changed := true; changed; {
+		changed = false
+		for _, i := range g {
+			if gone[i] {
+				continue
+			}
+			linked, alive := false, false
+			for _, ed := range e.Report.TreeEdges {
+				o := -1
+				if ed.A == i {
+					o = ed.B
+				} else if ed.B == i {
+					o = ed.A
+				}
+				if o < 0 {
+					continue
+				}
+				linked = true
+				if !gone[o] {
+					alive = true
+					break
+				}
+			}
+			for _, j := range g {
+				if !alive && linked && !gone[j] && j != i && (e.spanned(units[i], units[j]) || e.spanned(units[j], units[i])) {
+					alive = true
+				}
+			}
+			if linked && !alive {
+				gone[i] = true
+				out = append(out, i)
+				changed = true
+			}
+		}
+	}
+	return out
+}
+
 func (e *Engine) dropUnits(units []*Unit, g []int, drop []int) []int {
 	gone := map[int]bool{}
 	for _, i := range drop {
@@ -611,10 +978,17 @@ func (e *Engine) dropUnits(units []*Unit, g []int, drop []int) []int {
 			continue
 		}
 		u := units[i]
-		u.Status, u.Position, u.Component = core.StatusUnsynced, nil, -1
-		u.setError(ReasonNoMatch, "звук противоречит часам камеры (вероятна ложная пара)")
+		u.Status, u.Position, u.Component, u.BestScore = core.StatusUnsynced, nil, -1, 0
+		u.setError(ReasonNoMatch, "audio contradicts the camera clock (likely a false pair)")
 		e.Report.ClockDropped++
 	}
+	var tree []*Edge
+	for _, ed := range e.Report.TreeEdges {
+		if !gone[ed.A] && !gone[ed.B] {
+			tree = append(tree, ed)
+		}
+	}
+	e.Report.TreeEdges = tree
 	return out
 }
 
@@ -656,7 +1030,7 @@ func (e *Engine) timePass(units []*Unit, comps [][]int) {
 		clock := e.clocks(units)
 		found := false
 		for _, u := range units {
-			if u.placed() || u.RecTime == nil || u.errorIs("нет пути к файлу") || u.DupOf != nil {
+			if u.placed() || u.RecTime == nil || u.errorIs("no file path") || u.DupOf != nil {
 				continue
 			}
 			ci, lo, hi, ok := e.clockGroup(u, len(comps), clock, di)

@@ -14,10 +14,6 @@ an Ihrem Gerät vorgenommen werden?“ → **Ja**; macOS und Ubuntu — das Pass
 (die Zeichen werden beim Tippen nicht angezeigt — das ist normal). Den Installationsbefehl erneut
 auszuführen ist unbedenklich: Was schon installiert ist, wird nicht noch einmal installiert.
 
-> Die Installationsskripte melden ihren Fortschritt **auf Russisch** (zum Beispiel
-> `== 2/3 Сборка ==`, am Ende `Готово` — „Fertig“). Lesen müssen Sie das nicht: Warten
-> Sie einfach, bis sich das Orcaton-Fenster öffnet.
-
 ## Windows 10 / 11
 1. **PowerShell im Projektordner öffnen.** Öffnen Sie im Explorer den Projektordner, Rechtsklick auf
    eine freie Stelle → **In Terminal öffnen** (Windows 11). In Windows 10 — **Umschalt** gedrückt halten,
@@ -42,8 +38,8 @@ auszuführen ist unbedenklich: Was schon installiert ist, wird nicht noch einmal
    powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Run
    ```
    Das Skript baut das Programm, legt die Verknüpfungen an und öffnet das Fenster. Es erscheinen die Zeilen
-   `== 2/3 Сборка ==` (Bauen) und `== 3/3 Установка ==` (Installation).
-4. **Fertig**, wenn sich das Fenster **Orcaton** öffnet und im Terminal ein grünes `Готово` („Fertig“)
+   `== 2/3 Build ==` und `== 3/3 Installing to … ==`.
+4. **Fertig**, wenn sich das Fenster **Orcaton** öffnet und im Terminal eine grüne Zeile `Done: Orcaton … is installed`
    steht. Die Verknüpfung **Orcaton** liegt jetzt auf dem Desktop und im Startmenü; das Terminal können
    Sie schließen. Ab jetzt — nur noch die Verknüpfung.
 
@@ -195,5 +191,4 @@ Einstellungen und der Audio-Cache gelöscht.
 
 ## Ohne Fenster: Terminal
 Dieselben Funktionen gibt es als Befehl `orcaton` (wird mit derselben Installation eingerichtet) — für
-Skripte, Analysen und Stapelverarbeitung: `orcaton --help`; alle Optionen — [docs/go/usage.md](go/usage.md)
-(auf Russisch).
+Skripte, Analysen und Stapelverarbeitung: `orcaton --help`; alle Optionen — [docs/go/usage.de.md](go/usage.de.md).

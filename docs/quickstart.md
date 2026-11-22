@@ -14,9 +14,6 @@ for permission: Windows — the window "Do you want to allow this app to make ch
 typing — that is normal). Running the install command again is safe: what is already installed is not
 installed again.
 
-> The install scripts print their progress **in Russian** (for example `== 2/3 Сборка ==`,
-> at the end `Готово` — "Done"). You don't need to read it: just wait until the Orcaton window opens.
-
 ## Windows 10 / 11
 1. **Open PowerShell in the project folder.** In File Explorer go to the project folder, right-click an
    empty spot → **Open in Terminal** (Windows 11). In Windows 10 — hold **Shift**, right-click →
@@ -40,9 +37,9 @@ installed again.
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Run
    ```
-   The script builds the app, creates the shortcuts and opens the window. Lines `== 2/3 Сборка ==` (build)
-   and `== 3/3 Установка ==` (install) appear.
-4. **Done** when the **Orcaton** window opens and the terminal shows a green `Готово` ("Done"). The
+   The script builds the app, creates the shortcuts and opens the window. Lines `== 2/3 Build ==`
+   and `== 3/3 Installing to … ==` appear.
+4. **Done** when the **Orcaton** window opens and the terminal shows a green `Done: Orcaton … is installed`. The
    **Orcaton** shortcut is now on the desktop and in the Start menu; you can close the terminal. From now
    on — just the shortcut.
 
@@ -186,4 +183,4 @@ cache.
 
 ## Without the window: terminal
 The same features are available as the `orcaton` command (installed by the same installation) — for
-scripts, analysis and batch work: `orcaton --help`; all options — [docs/go/usage.md](go/usage.md) (in Russian).
+scripts, analysis and batch work: `orcaton --help`; all options — [docs/go/usage.md](go/usage.md).

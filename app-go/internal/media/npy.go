@@ -28,7 +28,7 @@ type NpyArray struct {
 
 func ReadNpy(data []byte) (*NpyArray, error) {
 	if len(data) < 10 || !bytes.Equal(data[:6], []byte("\x93NUMPY")) {
-		return nil, errors.New("не .npy")
+		return nil, errors.New("not a .npy")
 	}
 	major := data[6]
 	var hlen, off int
@@ -36,19 +36,19 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 		hlen, off = int(binary.LittleEndian.Uint16(data[8:10])), 10
 	} else {
 		if len(data) < 12 {
-			return nil, errors.New("обрезанный .npy")
+			return nil, errors.New("truncated .npy")
 		}
 		hlen, off = int(binary.LittleEndian.Uint32(data[8:12])), 12
 	}
 	if off+hlen > len(data) {
-		return nil, errors.New("обрезанный заголовок .npy")
+		return nil, errors.New("truncated .npy header")
 	}
 	header := string(data[off : off+hlen])
 	body := data[off+hlen:]
 	dm := descrRe.FindStringSubmatch(header)
 	sm := shapeRe.FindStringSubmatch(header)
 	if dm == nil || sm == nil {
-		return nil, fmt.Errorf("заголовок .npy не понят: %q", header)
+		return nil, fmt.Errorf(".npy header not understood: %q", header)
 	}
 	if fm := fortRe.FindStringSubmatch(header); fm != nil && fm[1] == "True" {
 		_ = fm
@@ -64,7 +64,7 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 			return nil, err
 		}
 		if k < 0 || (k > 0 && n > len(body)/k) {
-			return nil, fmt.Errorf("размерность .npy %q не сходится с данными (%d байт)", sm[1], len(body))
+			return nil, fmt.Errorf(".npy dimension %q does not match the data (%d bytes)", sm[1], len(body))
 		}
 		n *= k
 	}
@@ -72,7 +72,7 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 	switch dm[1] {
 	case "<f4", "=f4":
 		if len(body) < 4*n {
-			return nil, errors.New("обрезанные данные .npy")
+			return nil, errors.New("truncated .npy data")
 		}
 		a.F32 = make([]float32, n)
 		for i := range a.F32 {
@@ -80,7 +80,7 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 		}
 	case "<f2", "=f2":
 		if len(body) < 2*n {
-			return nil, errors.New("обрезанные данные .npy")
+			return nil, errors.New("truncated .npy data")
 		}
 		a.F32 = make([]float32, n)
 		for i := range a.F32 {
@@ -88,7 +88,7 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 		}
 	case "<f8", "=f8":
 		if len(body) < 8*n {
-			return nil, errors.New("обрезанные данные .npy")
+			return nil, errors.New("truncated .npy data")
 		}
 		a.F32 = make([]float32, n)
 		for i := range a.F32 {
@@ -96,11 +96,11 @@ func ReadNpy(data []byte) (*NpyArray, error) {
 		}
 	case "|u1", "<u1", "|i1":
 		if len(body) < n {
-			return nil, errors.New("обрезанные данные .npy")
+			return nil, errors.New("truncated .npy data")
 		}
 		a.Bytes = append([]byte(nil), body[:n]...)
 	default:
-		return nil, fmt.Errorf("тип .npy %s не поддерживается", dm[1])
+		return nil, fmt.Errorf(".npy type %s is not supported", dm[1])
 	}
 	return a, nil
 }

@@ -8,7 +8,7 @@ $OldCli = Join-Path $env:LOCALAPPDATA "Programs\orcaton-go"
 $RegKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton"
 $env:GOTOOLCHAIN = "auto"
 if ($env:ProgramFiles -and $Root.StartsWith($env:ProgramFiles, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Проект лежит в Program Files — сборка там не пройдёт без прав администратора. Скопируйте папку проекта в обычную, например $env:USERPROFILE\Projects\Orcaton, и запустите скрипт оттуда."
+    throw "The project is inside Program Files - the build will fail there without administrator rights. Copy the project folder to a regular location, e.g. $env:USERPROFILE\Projects\Orcaton, and run the script from there."
 }
 
 function Have($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
@@ -65,47 +65,47 @@ function Shortcut($lnk, $exe) {
     $sc.Save()
 }
 
-Write-Host "Orcaton $Version — установка для пользователя $env:USERNAME" -ForegroundColor Green
+Write-Host "Orcaton $Version - installing for user $env:USERNAME" -ForegroundColor Green
 
 if (Have "go") { $env:Path += ";" + (Join-Path (go env GOPATH) "bin") }
 
-Step "1/3 Проверка инструментов"
+Step "1/3 Checking tools"
 $missing = @()
 if (GoOk) { Show "Go" $true (go env GOVERSION) } else {
-    Show "Go" $false "нет или старее 1.22"; $missing += "Go 1.22+:  winget install --id GoLang.Go -e"
+    Show "Go" $false "missing or older than 1.22"; $missing += "Go 1.22+:  winget install --id GoLang.Go -e"
 }
 if (NodeOk) { Show "Node.js" $true (node -v) } else {
-    Show "Node.js" $false "нет или не 20.19+ / 22.12+"; $missing += "Node.js LTS:  winget install --id OpenJS.NodeJS.LTS -e"
+    Show "Node.js" $false "missing or not 20.19+ / 22.12+"; $missing += "Node.js LTS:  winget install --id OpenJS.NodeJS.LTS -e"
 }
-if (WebView2Ok) { Show "WebView2" $true "есть" } else {
-    Show "WebView2" $false "нет"; $missing += "WebView2:  winget install --id Microsoft.EdgeWebView2Runtime -e"
+if (WebView2Ok) { Show "WebView2" $true "found" } else {
+    Show "WebView2" $false "missing"; $missing += "WebView2:  winget install --id Microsoft.EdgeWebView2Runtime -e"
 }
-if (Have "wails") { Show "Wails CLI" $true "есть" } else {
-    Show "Wails CLI" $false "нет"; $missing += "Wails CLI v2.13.0:  go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0"
+if (Have "wails") { Show "Wails CLI" $true "found" } else {
+    Show "Wails CLI" $false "missing"; $missing += "Wails CLI v2.13.0:  go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0"
 }
-if ((Have "ffmpeg") -and (Have "ffprobe")) { Show "FFmpeg" $true "есть (необязательно)" } else {
-    Show "FFmpeg" $false "нет (необязательно — окно предложит при запуске; или: winget install --id Gyan.FFmpeg -e)"
+if ((Have "ffmpeg") -and (Have "ffprobe")) { Show "FFmpeg" $true "found (optional)" } else {
+    Show "FFmpeg" $false "missing (optional - the window offers it on launch; or: winget install --id Gyan.FFmpeg -e)"
 }
 if ($missing.Count -gt 0) {
-    Write-Host "`nНе хватает инструментов. Скрипт ничего сам не ставит. Выполните команды ниже (каждую отдельно),"
-    Write-Host "откройте НОВОЕ окно PowerShell в папке проекта и запустите скрипт снова:" -ForegroundColor Yellow
+    Write-Host "`nSome tools are missing. The script installs nothing itself. Run the commands below (each separately),"
+    Write-Host "open a NEW PowerShell window in the project folder and run the script again:" -ForegroundColor Yellow
     foreach ($m in $missing) { Write-Host "  $m" -ForegroundColor Cyan }
     exit 1
 }
 
-Step "2/3 Сборка"
+Step "2/3 Build"
 & (Join-Path $Root "app-gui\scripts\build-gui.ps1")
-if ($LASTEXITCODE -ne 0) { throw "сборка не удалась" }
+if ($LASTEXITCODE -ne 0) { throw "build failed" }
 $Bin = Join-Path $Root "app-gui\build\bin"
 
-Step "3/3 Установка в $Dest"
+Step "3/3 Installing to $Dest"
 $MachineKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Orcaton"
 if (Test-Path $MachineKey) {
     $loc = (Get-ItemProperty -Path $MachineKey -ErrorAction SilentlyContinue).InstallLocation
-    Write-Host "Внимание: Orcaton уже установлен установщиком .exe ($loc). Это будет вторая копия (для пользователя);" -ForegroundColor Yellow
-    Write-Host "команда orcaton в терминале — из Program Files (системный PATH раньше). Удалить ту: «Параметры → Приложения → Orcaton»." -ForegroundColor Yellow
+    Write-Host "Warning: Orcaton is already installed by the .exe installer ($loc). This will be a second copy (per user);" -ForegroundColor Yellow
+    Write-Host "the orcaton command in a terminal comes from Program Files (system PATH goes first). To remove that one: Settings > Apps > Orcaton." -ForegroundColor Yellow
 }
-if (Get-Process -Name "orcaton-gui" -ErrorAction SilentlyContinue) { throw "Orcaton сейчас открыт — закройте окно и повторите" }
+if (Get-Process -Name "orcaton-gui" -ErrorAction SilentlyContinue) { throw "Orcaton is running - close the window and try again" }
 New-Item -ItemType Directory -Force -Path $Dest | Out-Null
 Get-ChildItem $Bin -Force | Copy-Item -Destination $Dest -Recurse -Force
 Copy-Item -Force (Join-Path $PSScriptRoot "uninstall.ps1") $Dest
@@ -136,8 +136,8 @@ foreach ($k in $props.Keys) {
 $made += "registry=$RegKey"
 [IO.File]::WriteAllLines((Join-Path $Dest "install-manifest.txt"), [string[]]$made, (New-Object System.Text.UTF8Encoding($false)))
 
-Write-Host "`nГотово: Orcaton $Version установлен." -ForegroundColor Green
-Write-Host "  Окно: меню «Пуск» → Orcaton$(if (-not $NoDesktop) { ' (или ярлык на рабочем столе)' })"
-if (-not $NoPath) { Write-Host "  Команда: orcaton --help (в НОВОМ окне терминала)" }
-Write-Host "  Удалить: «Параметры → Приложения → Orcaton» или scripts\uninstall.ps1"
+Write-Host "`nDone: Orcaton $Version is installed." -ForegroundColor Green
+Write-Host "  Window: Start menu > Orcaton$(if (-not $NoDesktop) { ' (or the desktop shortcut)' })"
+if (-not $NoPath) { Write-Host "  Command: orcaton --help (in a NEW terminal window)" }
+Write-Host "  Uninstall: Settings > Apps > Orcaton, or scripts\uninstall.ps1"
 if ($Run) { Start-Process $exe }

@@ -74,13 +74,13 @@ func Resolve(memLimitMB, threads, jobs int, mediaPath string) Resources {
 func (r Resources) String() string {
 	ram := "?"
 	if r.RAM > 0 {
-		ram = fmt.Sprintf("%.1f ГБ", float64(r.RAM)/GiB)
+		ram = fmt.Sprintf("%.1f GB", float64(r.RAM)/GiB)
 	}
 	disk := r.Disk
 	if disk == "" {
-		disk = "диск ?"
+		disk = "disk ?"
 	}
-	s := fmt.Sprintf("ОЗУ %s → потолок %.1f ГБ, потоков %d, ffmpeg %d (%s)", ram,
+	s := fmt.Sprintf("RAM %s → cap %.1f GB, threads %d, ffmpeg %d (%s)", ram,
 		float64(r.MemLimit)/GiB, r.Threads, r.Jobs, disk)
 	if r.FFmpeg != "" {
 		s += ", FFmpeg " + r.FFmpeg

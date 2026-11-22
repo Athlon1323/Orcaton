@@ -12,7 +12,7 @@ if (-not $need) {
 }
 if ($need) {
     if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
-        Write-Host "Нет Go для сборки: app-go\scripts\install.ps1 (или https://go.dev/dl/)" -ForegroundColor Red
+        Write-Host "No Go to build with: app-go\scripts\install.ps1 (or https://go.dev/dl/)" -ForegroundColor Red
         exit 3
     }
     & (Join-Path $PSScriptRoot "build.ps1") | Out-Null

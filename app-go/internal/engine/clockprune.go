@@ -25,7 +25,7 @@ func (e *Engine) pruneClockOutliers(units []*Unit, comps [][]int) [][]int {
 			gone[i] = true
 			u := units[i]
 			u.Status, u.Position, u.Component, u.BestScore = core.StatusUnsynced, nil, -1, 0
-			u.setError(ReasonNoMatch, "звук противоречит часам камеры (вероятна ложная пара)")
+			u.setError(ReasonNoMatch, "audio contradicts the camera clock (likely a false pair)")
 			e.Report.ClockDropped++
 		}
 		parts := e.connectedParts(units, comp, gone)
@@ -40,7 +40,7 @@ func (e *Engine) pruneClockOutliers(units []*Unit, comps [][]int) [][]int {
 			for _, i := range c {
 				u := units[i]
 				u.Status, u.Position, u.Component, u.BestScore = core.StatusUnsynced, nil, -1, 0
-				u.setError(ReasonNoMatch, "пара снята: звук партнёра противоречил часам камеры")
+				u.setError(ReasonNoMatch, "pair removed: the partner's audio contradicted the camera clock")
 			}
 			continue
 		}

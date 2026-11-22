@@ -41,53 +41,53 @@ func syncCommand() *command {
 
 func syncBase() *command {
 	return &command{name: "sync",
-		help: "Синхронизировать таймлайн по звуку: IN (xml/drt) → OUT (xml/drt).\n\n" +
-			"  OUT .drt — только из IN .drt: исходный таймлайн патчится (меняются позиции клипов),\n" +
-			"  всё остальное остаётся как было. Метки в DRT пока не пишутся — статусы в CSV-отчёте\n" +
-			"  (для DRT он создаётся всегда: OUT_report.csv).",
+		help: "Synchronize a timeline by audio: IN (xml/drt) → OUT (xml/drt).\n\n" +
+			"  OUT .drt — only from IN .drt: the source timeline is patched (clip positions change),\n" +
+			"  everything else stays as it was. Labels are not written to DRT yet — statuses go to the CSV report\n" +
+			"  (for DRT it is always created: OUT_report.csv).",
 		args: []arg{{name: "src", file: true}, {name: "dst"}},
 		opts: []opt{mapOpt, searchOpt, depthOpt, yesOpt,
 			{names: []string{"--keep-paths"}, neg: "--no-keep-paths", kind: kBool, def: false,
-				help: "--map/--search только для чтения медиа; в OUT остаются исходные пути"},
+				help: "--map/--search are only for reading media; OUT keeps the original paths"},
 			{names: []string{"--unsynced"}, kind: kStr, def: "order_time",
-				help: "Без пары: order_time (по порядку камеры, и внутри отрезков) | edges (внутрь отрезка — никогда) | end | remove. Нет на диске — всегда в самый конец"},
+				help: "Unpaired: order_time (in camera order, also inside segments) | edges (never inside a segment) | end | remove. Offline — always at the very end"},
 			{names: []string{"--order-by"}, kind: kStr, def: "name",
-				help: "Порядок файлов камеры: name (номер в имени, потом время съёмки) | time (время съёмки / TC)"},
+				help: "Camera file order: name (number in the name, then shooting time) | time (shooting time / TC)"},
 			{names: []string{"--singles"}, kind: kStr, def: "sequential",
-				help: "Файлы без пары: sequential (не идут одновременно с другими файлами без пары по звуку) | stacked (каждый по своей камере)"},
-			{names: []string{"--label"}, kind: kStr, def: "Rose", help: "Цветовая метка несинхронизированных"},
+				help: "Unpaired files: sequential (do not run at the same time as other unpaired files) | stacked (each on its own camera)"},
+			{names: []string{"--label"}, kind: kStr, def: "Rose", help: "Color label for unsynced clips"},
 			{names: []string{"--min-conf"}, kind: kFloat, def: 12.0, min: bound(0),
-				help: "Мин. значимость совпадения (z Фишера); порог поднимается до шума проекта"},
-			{names: []string{"--min-ratio"}, kind: kFloat, def: 1.5, min: bound(0), help: "Однозначность: z пика / z второго"},
+				help: "Min. match significance (Fisher z); the threshold rises to the project noise"},
+			{names: []string{"--min-ratio"}, kind: kFloat, def: 1.5, min: bound(0), help: "Uniqueness: peak z / second z"},
 			{names: []string{"--auto-threshold"}, neg: "--no-auto-threshold", kind: kBool, def: true,
-				help: "Порог по шуму проекта (медиана + 6·MAD по всем парам)"},
-			{names: []string{"--min-overlap"}, kind: kFloat, def: 2.0, min: bound(0), help: "Мин. перекрытие звука, сек"},
-			{names: []string{"--max-offset"}, kind: kFloat, min: bound(0.001), help: "Окно поиска ±сек"},
+				help: "Threshold from project noise (median + 6·MAD over all pairs)"},
+			{names: []string{"--min-overlap"}, kind: kFloat, def: 2.0, min: bound(0), help: "Min. audio overlap, s"},
+			{names: []string{"--max-offset"}, kind: kFloat, min: bound(0.001), help: "Search window ±s"},
 			{names: []string{"--audio-mode"}, kind: kStr, def: "mix",
-				help: "Звук для анализа: mix | first_stream | first_channel"},
+				help: "Audio for analysis: mix | first_stream | first_channel"},
 			{names: []string{"--file-order"}, neg: "--no-file-order", kind: kBool, def: true,
-				help: "Файлы одной камеры (дорожка+папка) идут по порядку TC/номера"},
+				help: "Files of one camera (track+folder) follow TC/number order"},
 			{names: []string{"--intra-lane"}, neg: "--no-intra-lane", kind: kBool, def: false,
-				help: "Сравнивать клипы одной дорожки (если на ней смешаны устройства)"},
+				help: "Compare clips on the same track (if devices are mixed on it)"},
 			{names: []string{"--jobs", "-j"}, kind: kInt, def: 0, min: bound(0), max: bound(256),
-				help: "Параллельных ffmpeg; 0 — авто: половина ядер (2…16), на HDD — до 4"},
+				help: "Parallel ffmpeg processes; 0 — auto: half the cores (2…16), up to 4 on HDD"},
 			{names: []string{"--threads"}, kind: kInt, def: 0, min: bound(0), max: bound(4096),
-				help: "Потоков корреляции; 0 — все ядра"},
+				help: "Correlation threads; 0 — all cores"},
 			{names: []string{"--mem-limit"}, kind: kFloat, def: 0.0, min: bound(0),
-				help: "Потолок памяти, ГБ; 0 — авто: ¾ ОЗУ, от 1 до 7 ГБ"},
-			{names: []string{"--cache"}, kind: kStr, help: "Папка кэша признаков"},
-			{names: []string{"--report"}, kind: kStr, help: "CSV-отчёт по клипам"},
-			{names: []string{"--to"}, kind: kStr, help: "Формат вывода"},
+				help: "Memory cap, GB; 0 — auto: ¾ of RAM, 1 to 7 GB"},
+			{names: []string{"--cache"}, kind: kStr, help: "Feature cache folder"},
+			{names: []string{"--report"}, kind: kStr, help: "Per-clip CSV report"},
+			{names: []string{"--to"}, kind: kStr, help: "Output format"},
 			{names: []string{"--originals"}, kind: kList,
-				help: "Папка с оригиналами/сайдкарами камер (время записи для прокси); можно несколько раз"},
+				help: "Folder with camera originals/sidecars (recording time for proxies); can be repeated"},
 			{names: []string{"--record-time"}, neg: "--no-record-time", kind: kBool, def: true,
-				help: "Использовать время записи: порядок, паузы, постановка по часам камеры"},
+				help: "Use recording time: order, gaps, placement by camera clock"},
 			{names: []string{"--time-label"}, kind: kStr, def: "Mango",
-				help: "Цветовая метка файлов, поставленных только по часам камеры"},
+				help: "Color label for files placed by camera clock only"},
 			{names: []string{"--max-gap"}, kind: kFloat, def: 0.0, min: bound(0),
-				help: "Пустоты длиннее (сек), где не идёт ни один файл, убираются; 0 — все"},
+				help: "Gaps longer than this (s) where no file plays are removed; 0 — all"},
 			{names: []string{"--keep-gap"}, kind: kFloat, def: 0.0, min: bound(0),
-				help: "До какой длины сжимать такие пустоты, сек (0 — встык)"},
+				help: "Length to shrink such gaps to, s (0 — butt-joined)"},
 			progressOpt, configOpt, noConfigOpt, briefOpt, jsonOpt},
 		run: cmdSync}
 }
@@ -108,7 +108,7 @@ func cmdSync(c *ctx) int {
 	}
 	src, dst := c.Arg("src"), c.Arg("dst")
 	if len(files) > 0 && !quiet {
-		c.printf("Настройки: %s\n", strings.Join(files, "; "))
+		c.printf("Settings: %s\n", strings.Join(files, "; "))
 	}
 	p, code := c.loadWithMedia(src)
 	if code != 0 {
@@ -116,7 +116,7 @@ func cmdSync(c *ctx) int {
 	}
 	outFmt, report, err := app.CheckOutput(p, dst, c.Str("to"), c.Str("report"))
 	if err != nil {
-		c.printf("Ошибка: %v\n", err)
+		c.printf("Error: %v\n", err)
 		return 2
 	}
 	sctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -127,12 +127,12 @@ func cmdSync(c *ctx) int {
 		return ffmpegFail(c, err)
 	}
 	if err := app.Save(run, dst, c.Str("to"), c.Bool("keep-paths"), prog); err != nil {
-		c.printf("Ошибка записи: %v\n", err)
+		c.printf("Write error: %v\n", err)
 		return 2
 	}
 	if report != "" {
 		if err := app.WriteReport(report, run.Report); err != nil {
-			c.printf("Ошибка: %v\n", err)
+			c.printf("Error: %v\n", err)
 			return 1
 		}
 	}
@@ -148,7 +148,7 @@ func syncOptions(c *ctx) (engine.Options, int) {
 	o := engine.DefaultOptions()
 	placement, ok := engine.ParsePlacement(c.Str("unsynced"))
 	if !ok {
-		c.println("--unsynced: допустимо edges | order_time | end | remove")
+		c.println("--unsynced: allowed values are edges | order_time | end | remove")
 		return o, 2
 	}
 	o.AudioMode = c.Str("audio-mode")
@@ -174,15 +174,15 @@ func syncOptions(c *ctx) (engine.Options, int) {
 	o.IdleGapSec = c.Float("max-gap")
 	o.IdleKeepSec = c.Float("keep-gap")
 	if err := o.Validate(); err != nil {
-		c.printf("Ошибка: %v\n", err)
+		c.printf("Error: %v\n", err)
 		return o, 2
 	}
 	return o, 0
 }
 
 var progressOpt = opt{names: []string{"--progress"}, kind: kStr, def: "auto",
-	help: "Прогресс в stderr: auto (строкой, если stderr — терминал и нет --brief/--json) | text | " +
-		"json (событие JSON на строку: stage, title, done, total, file) | none"}
+	help: "Progress to stderr: auto (one line if stderr is a terminal and there is no --brief/--json) | text | " +
+		"json (one JSON event per line: stage, title, done, total, file) | none"}
 
 func syncProgress(c *ctx, quiet bool) (engine.Progress, int) {
 	mode := c.Str("progress")
@@ -199,7 +199,7 @@ func syncProgress(c *ctx, quiet bool) (engine.Progress, int) {
 	case "none":
 		return nil, 0
 	}
-	c.println("--progress: допустимо auto | text | json | none")
+	c.println("--progress: allowed values are auto | text | json | none")
 	return nil, 2
 }
 
@@ -248,17 +248,17 @@ func printSyncBrief(c *ctx, r *engine.Report, dst, report string) {
 		return
 	}
 	loose := int(sf(sm, "unsynced")) - int(sf(sm, "offline"))
-	c.printf("sync → %s: звук %s/%s, часы %s, без пары %d, нет на диске %s | пар %s, рёбер %s, "+
-		"порог %s | %s с\n", formats.BaseName(dst), sv(sm, "synced"), sv(sm, "units"),
+	c.printf("sync → %s: audio %s/%s, clock %s, unpaired %d, offline %s | pairs %s, edges %s, "+
+		"threshold %s | %s s\n", formats.BaseName(dst), sv(sm, "synced"), sv(sm, "units"),
 		sv(sm, "by_time"), loose, sv(sm, "offline"), sv(sm, "tried_pairs"), sv(sm, "edges"),
 		sv(sm, "threshold"), sv(sm, "seconds"))
 }
 
 func printSyncText(c *ctx, r *engine.Report, drtOut bool, dst, report string) {
-	c.printf("Единиц: %d  синхронизировано: %d  нет: %d  пар проверено: %d  совпадений: %d  "+
-		"порог z: %s (шум %s)  неоднозначных: %d  отброшено: наложение %d, порядок файлов %d  "+
-		"в окне камеры: %d  время записи: %d файлов, по часам+звук: %d (сдвигом %d), только по часам: %d, "+
-		"сшито групп: %d  несогласованных: %d  конфликтов: %d\n",
+	c.printf("Units: %d  synced: %d  not: %d  pairs checked: %d  matches: %d  "+
+		"z threshold: %s (noise %s)  ambiguous: %d  rejected: overlap %d, file order %d  "+
+		"in camera window: %d  recording time: %d files, clock+audio: %d (by shift %d), clock only: %d, "+
+		"groups joined: %d  inconsistent: %d  conflicts: %d\n",
 		len(r.Units), r.Count(core.StatusSynced), r.Count(core.StatusUnsynced), r.TriedPairs,
 		len(r.Edges), num.Fixed(r.Threshold, 1), num.Fixed(r.NoiseLevel, 1), r.Ambiguous,
 		r.RejectedOverlap, r.RejectedOrder, r.WindowSynced, r.WithRecTime, r.TimeAudio,
@@ -274,14 +274,14 @@ func printSyncText(c *ctx, r *engine.Report, drtOut bool, dst, report string) {
 				apart++
 			}
 		}
-		where := "стоят вместе с оригиналом"
+		where := "placed together with the original"
 		if apart > 0 {
-			where += fmt.Sprintf(", кроме %d: в DRT на общей с оригиналом дорожке — без пары, по порядку камеры", apart)
+			where += fmt.Sprintf(", except %d: in DRT on a track shared with the original — unpaired, in camera order", apart)
 		}
-		c.printf("Копий файлов (тот же звук): %d — %s\n", r.Duplicates, where)
+		c.printf("File copies (same audio): %d — %s\n", r.Duplicates, where)
 	}
-	c.printf("Время, c: %s\n", strings.Join(tparts, ", "))
-	c.printf("Ресурсы: %s; пик памяти %s\n", r.Resources, peakText(r.PeakMem))
+	c.printf("Time, s: %s\n", strings.Join(tparts, ", "))
+	c.printf("Resources: %s; peak memory %s\n", r.Resources, peakText(r.PeakMem))
 	why := newCounter()
 	for _, u := range r.Units {
 		if u.Error != nil && *u.Error != "" {
@@ -289,20 +289,20 @@ func printSyncText(c *ctx, r *engine.Report, drtOut bool, dst, report string) {
 		}
 	}
 	if len(why.keys) > 0 {
-		c.printf("Причины несинхронизации: %s\n", why.String())
+		c.printf("Reasons not synced: %s\n", why.String())
 	}
 	if report != "" {
-		c.printf("Отчёт: %s\n", report)
+		c.printf("Report: %s\n", report)
 	}
 	if drtOut {
-		c.println("DRT: цветовые метки (без пары / по часам) в .drt пока не пишутся — статусы клипов в отчёте")
+		c.println("DRT: color labels (unpaired / by clock) are not written to .drt yet — clip statuses are in the report")
 	}
-	c.printf("Записано: %s\n", dst)
+	c.printf("Written: %s\n", dst)
 }
 
 func peakText(b uint64) string {
 	if b == 0 {
 		return "?"
 	}
-	return fmt.Sprintf("%.1f ГБ", float64(b)/(1<<30))
+	return fmt.Sprintf("%.1f GB", float64(b)/(1<<30))
 }

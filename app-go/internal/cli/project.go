@@ -20,19 +20,19 @@ func cmdVersion(c *ctx) int {
 	v, _ := media.ToolVersion(p)
 	old := ""
 	if media.FFmpegVersionOld(v) {
-		old = fmt.Sprintf(" — старше %s: работать будет, но не проверено, лучше обновить", media.MinFFmpeg)
+		old = fmt.Sprintf(" — older than %s: should work but is untested, better update", media.MinFFmpeg)
 	}
 	c.printf("FFmpeg %s (%s)%s\n", v, p, old)
 	return 0
 }
 
 func cmdFormats(c *ctx) int {
-	t := newTable("Направление", "Ключ", "Название", "Расширения")
+	t := newTable("Direction", "Key", "Name", "Extensions")
 	for _, i := range formats.Importers() {
-		t.add("импорт", i.Name(), i.Title(), strings.Join(i.Extensions(), ", "))
+		t.add("import", i.Name(), i.Title(), strings.Join(i.Extensions(), ", "))
 	}
 	for _, e := range formats.Exporters() {
-		t.add("экспорт", e.Name(), e.Title(), strings.Join(e.Extensions(), ", "))
+		t.add("export", e.Name(), e.Title(), strings.Join(e.Extensions(), ", "))
 	}
 	t.print(c.out)
 	return 0
@@ -43,11 +43,11 @@ func cmdInspect(c *ctx) int {
 	if code != 0 {
 		return code
 	}
-	c.printf("%s  формат=%s  медиафайлов=%d\n", p.Name, p.SourceFormat, len(p.Media))
+	c.printf("%s  format=%s  media files=%d\n", p.Name, p.SourceFormat, len(p.Media))
 	for _, s := range p.Sequences {
-		c.printf("\n%s  %s fps  %sx%s  длительность=%s c  старт TC=%s\n", s.Name, s.Rate,
+		c.printf("\n%s  %s fps  %sx%s  duration=%s s  start TC=%s\n", s.Name, s.Rate,
 			intOrNone(s.Width), intOrNone(s.Height), num.Fixed(num.Float(s.Duration()), 1), tcOf(s, 0))
-		t := newTable("Дорожка", "Клипов", "Разрывов", "FPS исходников", "Метки", "Папки")
+		t := newTable("Track", "Clips", "Gaps", "Source FPS", "Labels", "Folders")
 		for _, tr := range s.Tracks {
 			fps, labels, dirs := newCounter(), newCounter(), newCounter()
 			for _, cl := range tr.Clips {
@@ -109,10 +109,10 @@ func cmdClips(c *ctx) int {
 	head := []string{"track", "name", "start_s", "start_tc", "dur_s", "src_in_s", "fps", "file_tc", "label"}
 	if out := c.Str("csv"); out != "" {
 		if err := pyio.WriteCSVFile(out, head, rows); err != nil {
-			c.printf("Ошибка: %v\n", err)
+			c.printf("Error: %v\n", err)
 			return 1
 		}
-		c.printf("Сохранено: %s (%d строк)\n", out, len(rows))
+		c.printf("Saved: %s (%d rows)\n", out, len(rows))
 		return 0
 	}
 	t := newTable(head...)
@@ -129,9 +129,9 @@ func cmdConvert(c *ctx) int {
 		return code
 	}
 	if err := formats.WriteProject(p, c.Arg("dst"), c.Str("to")); err != nil {
-		c.printf("Ошибка: %v\n", err)
+		c.printf("Error: %v\n", err)
 		return 2
 	}
-	c.printf("Записано: %s\n", c.Arg("dst"))
+	c.printf("Written: %s\n", c.Arg("dst"))
 	return 0
 }

@@ -196,5 +196,5 @@ func (a *App) RemoveCLITool(prompt string) session.CLIToolReply { return a.s.Rem
 
 func (a *App) dialogError(err error) *api.ErrorInfo {
 	a.log.Printf("dialog: %v", err)
-	return &api.ErrorInfo{Kind: api.ErrFailed, Message: "диалог ОС: " + err.Error()}
+	return &api.ErrorInfo{Kind: api.ErrFailed, Message: "OS dialog: " + err.Error()}
 }

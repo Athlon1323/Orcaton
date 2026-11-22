@@ -14,9 +14,9 @@ const (
 )
 
 var StageTitles = map[Stage]string{
-	StageSearch: "Поиск медиа", StageRecordTime: "Время записи", StageFeatures: "Анализ звука",
-	StagePairs: "Сопоставление пар", StageRefine: "Уточнение пар", StageSolve: "Сборка групп",
-	StageLayout: "Раскладка", StageWrite: "Запись",
+	StageSearch: "Media search", StageRecordTime: "Recording time", StageFeatures: "Audio analysis",
+	StagePairs: "Pair matching", StageRefine: "Pair refinement", StageSolve: "Group assembly",
+	StageLayout: "Layout", StageWrite: "Writing",
 }
 
 type Event struct {

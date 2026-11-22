@@ -239,7 +239,7 @@ func (e *Engine) checkConflicts(units []*Unit, comps [][]int) {
 					}
 					loser.Status = core.StatusUnsynced
 					loser.Position = nil
-					loser.setError(ReasonConflict, "конфликт: наложение на своей дорожке")
+					loser.setError(ReasonConflict, "conflict: overlap on its own track")
 					e.Report.Conflicts++
 				}
 			}

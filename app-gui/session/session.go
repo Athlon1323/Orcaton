@@ -38,7 +38,7 @@ func (s *Session) begin(op string) (context.Context, func(), *api.ErrorInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.op != "" {
-		return nil, nil, &api.ErrorInfo{Kind: ErrBusy, Message: "идёт другая операция: " + s.op}
+		return nil, nil, &api.ErrorInfo{Kind: ErrBusy, Message: "another operation is running: " + s.op}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.op, s.cancel = op, cancel
@@ -343,7 +343,7 @@ func (s *Session) Save(path, format string, keepPaths bool) (r PathReply) {
 	res := s.result
 	s.mu.Unlock()
 	if res == nil {
-		r.Error = &api.ErrorInfo{Kind: ErrNoProject, Message: "нет результата: сначала синхронизируйте"}
+		r.Error = &api.ErrorInfo{Kind: ErrNoProject, Message: "no result: synchronize first"}
 		return r
 	}
 	if err := res.Save(path, api.SaveOptions{Format: format, KeepPaths: keepPaths}, s.ev.event); err != nil {
@@ -364,7 +364,7 @@ func (s *Session) SaveReport(path string) (r PathReply) {
 	res := s.result
 	s.mu.Unlock()
 	if res == nil {
-		r.Error = &api.ErrorInfo{Kind: ErrNoProject, Message: "нет результата: сначала синхронизируйте"}
+		r.Error = &api.ErrorInfo{Kind: ErrNoProject, Message: "no result: synchronize first"}
 		return r
 	}
 	if err := res.SaveReport(path); err != nil {
@@ -382,7 +382,7 @@ func (s *Session) Close() {
 }
 
 func noProject() *api.ErrorInfo {
-	return &api.ErrorInfo{Kind: ErrNoProject, Message: "таймлайн не открыт"}
+	return &api.ErrorInfo{Kind: ErrNoProject, Message: "no timeline is open"}
 }
 
 func contains(xs []string, x string) bool {

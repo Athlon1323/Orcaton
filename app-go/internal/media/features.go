@@ -131,7 +131,7 @@ func (s *FeatureStore) getCtx(ctx context.Context, path string) ([]float32, erro
 	if data, err := os.ReadFile(f); err == nil {
 		a, err := ReadNpy(data)
 		if err != nil || a.F32 == nil {
-			return nil, fmt.Errorf("кэш %s повреждён: %v", f, err)
+			return nil, fmt.Errorf("cache %s is damaged: %v", f, err)
 		}
 		arr = a.F32
 		now := timeNow()
@@ -237,7 +237,7 @@ type FeatureBundle struct {
 
 func LoadBundle(paths []string) (*FeatureBundle, error) {
 	if len(paths) == 0 {
-		return nil, fmt.Errorf("нужен хотя бы один набор")
+		return nil, fmt.Errorf("at least one set is required")
 	}
 	b := &FeatureBundle{data: map[string][]float32{}}
 	var params *FeatureParams
@@ -248,7 +248,7 @@ func LoadBundle(paths []string) (*FeatureBundle, error) {
 		}
 		meta, ok := arrs["__meta__"]
 		if !ok || meta.Bytes == nil {
-			return nil, fmt.Errorf("%s: нет __meta__", one)
+			return nil, fmt.Errorf("%s: no __meta__", one)
 		}
 		var m map[string]any
 		if err := json.Unmarshal(meta.Bytes, &m); err != nil {
@@ -261,12 +261,12 @@ func LoadBundle(paths []string) (*FeatureBundle, error) {
 		}
 		fv := toInt(m["feature_version"])
 		if fv != dsp.FeatureVersion {
-			return nil, fmt.Errorf("%s: признаки версии %d, движок ждёт %d — пересоздайте набор",
+			return nil, fmt.Errorf("%s: features of version %d, the engine expects %d — recreate the set",
 				one, fv, dsp.FeatureVersion)
 		}
 		prm := FeatureParams{toInt(m["sample_rate"]), toInt(m["hop"]), fmt.Sprint(m["audio_mode"])}
 		if params != nil && prm != *params {
-			return nil, fmt.Errorf("%s: параметры анализа отличаются от первого набора", one)
+			return nil, fmt.Errorf("%s: analysis parameters differ from the first set", one)
 		}
 		params = &prm
 	}

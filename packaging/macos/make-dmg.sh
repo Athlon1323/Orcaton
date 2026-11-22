@@ -6,26 +6,26 @@ build=1
 for a in "$@"; do
     case "$a" in
         --no-build) build=0 ;;
-        *) echo "неизвестный ключ: $a" >&2; exit 2 ;;
+        *) echo "unknown option: $a" >&2; exit 2 ;;
     esac
 done
 die() { echo "!! $*" >&2; exit 1; }
-[ "$(uname -s)" = Darwin ] || die "make-dmg.sh — только на macOS (hdiutil, codesign)"
-for c in hdiutil codesign lipo ditto shasum osascript; do command -v "$c" >/dev/null || die "не найдено: $c"; done
+[ "$(uname -s)" = Darwin ] || die "make-dmg.sh runs on macOS only (hdiutil, codesign)"
+for c in hdiutil codesign lipo ditto shasum osascript; do command -v "$c" >/dev/null || die "not found: $c"; done
 version="$(tr -d ' \r\n' < "$root/VERSION")"
 
 [ "$build" = 1 ] && bash "$root/app-gui/scripts/build-gui.sh"
 app="$root/app-gui/build/bin/Orcaton.app"
-[ -d "$app" ] || die "нет $app — запустите без --no-build"
-codesign --verify --deep --strict "$app" || die "подпись $app не в порядке — пересоберите: bash app-gui/scripts/build-gui.sh"
+[ -d "$app" ] || die "no $app — run without --no-build"
+codesign --verify --deep --strict "$app" || die "the signature of $app is broken — rebuild: bash app-gui/scripts/build-gui.sh"
 gui="$(lipo -archs "$app/Contents/MacOS/orcaton-gui")"; cli="$(lipo -archs "$app/Contents/MacOS/orcaton")"
 case "$gui" in
     *x86_64*arm64*|*arm64*x86_64*) kind=universal ;;
     arm64) kind=arm64 ;;
     *) kind=x86_64 ;;
 esac
-case "$cli" in *x86_64*arm64*|*arm64*x86_64*) [ "$kind" = universal ] || die "окно — $gui, команда — $cli" ;; esac
-[ "$kind" != universal ] && echo "Внимание: .app не универсальный ($gui) — соберите без --native"
+case "$cli" in *x86_64*arm64*|*arm64*x86_64*) [ "$kind" = universal ] || die "window — $gui, command — $cli" ;; esac
+[ "$kind" != universal ] && echo "Warning: the .app is not universal ($gui) — build without --native"
 vol="Orcaton $version"
 out="$root/app-gui/build/bin/Orcaton-$version-macos-$kind.dmg"
 
@@ -65,9 +65,9 @@ TXT
 
 rw="$tmp/rw.dmg"
 hdiutil create -quiet -volname "$vol" -srcfolder "$stage" -fs HFS+ -format UDRW -ov "$rw"
-[ -d "/Volumes/$vol" ] && die "уже подключён диск «$vol» — извлеките его и повторите"
+[ -d "/Volumes/$vol" ] && die "disk \"$vol\" is already mounted — eject it and try again"
 mnt="$(hdiutil attach "$rw" -readwrite -noverify -noautoopen | awk -F'\t' '/\/Volumes\//{print $NF; exit}')"
-[ -n "$mnt" ] || die "не удалось подключить образ"
+[ -n "$mnt" ] || die "failed to mount the image"
 if ! osascript <<OSA
 tell application "Finder"
     tell disk "$vol"
@@ -93,7 +93,7 @@ tell application "Finder"
 end tell
 OSA
 then
-    echo "Внимание: Finder не разложил окно (нет разрешения «Терминал → Finder»?) — образ без фона"
+    echo "Warning: Finder did not lay out the window (no Terminal → Finder permission?) — image without background"
 fi
 chmod -Rf go-w "$mnt" || true
 sync
@@ -103,5 +103,5 @@ rm -f "$out"
 hdiutil convert "$rw" -quiet -format UDZO -imagekey zlib-level=9 -o "$out"
 hdiutil verify -quiet "$out"
 (cd "$(dirname "$out")" && shasum -a 256 "$(basename "$out")" > "$(basename "$out").sha256")
-echo "Готово: $out"
+echo "Done: $out"
 echo "SHA-256: $(cut -d' ' -f1 < "$out.sha256")"

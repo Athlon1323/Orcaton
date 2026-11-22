@@ -109,17 +109,17 @@ func (s *Session) InstallFFmpeg() (r InstallReply) {
 	defer end()
 	p := s.FFmpegPlan()
 	if !p.Button {
-		r.Error = &api.ErrorInfo{Kind: api.ErrNoFFmpeg, Message: "установить кнопкой нельзя (" + p.Problem + "): " + p.Command}
+		r.Error = &api.ErrorInfo{Kind: api.ErrNoFFmpeg, Message: "cannot install with the button (" + p.Problem + "): " + p.Command}
 		r.FFmpeg = s.CheckFFmpeg()
 		return r
 	}
 	s.log.Printf("ffmpeg install: %s", strings.Join(p.argv, " "))
 	if err := runLines(ctx, p.argv, func(line string) { s.log.Printf("ffmpeg> %s", line); s.ev.em.Emit(EventFFmpeg, line) }); err != nil {
 		if ctx.Err() != nil {
-			r.Error = &api.ErrorInfo{Kind: api.ErrCancelled, Message: "установка FFmpeg остановлена"}
+			r.Error = &api.ErrorInfo{Kind: api.ErrCancelled, Message: "FFmpeg installation stopped"}
 		} else {
 			r.Error = &api.ErrorInfo{Kind: api.ErrFailed, Message: fmt.Sprintf("%s: %v", p.Tool, err),
-				Hint: "Выполните команду в терминале: " + p.Command}
+				Hint: "Run the command in a terminal: " + p.Command}
 		}
 	}
 	r.FFmpeg = s.CheckFFmpeg()
@@ -162,7 +162,7 @@ func runLines(ctx context.Context, argv []string, line func(string)) error {
 	pr.Close()
 	var ee *exec.ExitError
 	if errors.As(werr, &ee) {
-		return fmt.Errorf("код выхода %d", ee.ExitCode())
+		return fmt.Errorf("exit code %d", ee.ExitCode())
 	}
 	return werr
 }

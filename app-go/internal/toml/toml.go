@@ -45,13 +45,13 @@ func Parse(src string) (*Table, error) {
 		}
 		if strings.HasPrefix(line, "[") && !strings.HasSuffix(line, "]") ||
 			strings.HasPrefix(line, "[[") && !strings.HasSuffix(line, "]]") {
-			return nil, fmt.Errorf("строка %d: незакрытый заголовок раздела %s", ln+1, line)
+			return nil, fmt.Errorf("line %d: unclosed section header %s", ln+1, line)
 		}
 		if strings.HasPrefix(line, "[[") {
 			name := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(line, "[["), "]]"))
 			parent, last, err := walk(root, name, false)
 			if err != nil {
-				return nil, fmt.Errorf("строка %d: %v", ln+1, err)
+				return nil, fmt.Errorf("line %d: %v", ln+1, err)
 			}
 			arr, _ := parent.M[last].([]*Table)
 			t := newTable()
@@ -63,7 +63,7 @@ func Parse(src string) (*Table, error) {
 			name := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(line, "["), "]"))
 			parent, last, err := walk(root, name, false)
 			if err != nil {
-				return nil, fmt.Errorf("строка %d: %v", ln+1, err)
+				return nil, fmt.Errorf("line %d: %v", ln+1, err)
 			}
 			t, ok := parent.M[last].(*Table)
 			if !ok {
@@ -75,7 +75,7 @@ func Parse(src string) (*Table, error) {
 		}
 		eq := strings.Index(line, "=")
 		if eq < 0 {
-			return nil, fmt.Errorf("строка %d: ожидается ключ = значение", ln+1)
+			return nil, fmt.Errorf("line %d: expected key = value", ln+1)
 		}
 		key := unquoteKey(strings.TrimSpace(line[:eq]))
 		val := strings.TrimSpace(line[eq+1:])
@@ -85,13 +85,13 @@ func Parse(src string) (*Table, error) {
 		}
 		v, rest, err := parseValue(val)
 		if err != nil {
-			return nil, fmt.Errorf("строка %d: %v", ln+1, err)
+			return nil, fmt.Errorf("line %d: %v", ln+1, err)
 		}
 		if strings.TrimSpace(rest) != "" {
-			return nil, fmt.Errorf("строка %d: лишнее после значения: %q", ln+1, rest)
+			return nil, fmt.Errorf("line %d: extra text after the value: %q", ln+1, rest)
 		}
 		if _, dup := cur.M[key]; dup {
-			return nil, fmt.Errorf("строка %d: ключ %s задан дважды", ln+1, key)
+			return nil, fmt.Errorf("line %d: key %s set twice", ln+1, key)
 		}
 		cur.set(key, v)
 	}
@@ -108,7 +108,7 @@ func walk(root *Table, name string, _ bool) (*Table, string, error) {
 			t = x
 		case []*Table:
 			if len(x) == 0 {
-				return nil, "", fmt.Errorf("пустой массив таблиц %s", p)
+				return nil, "", fmt.Errorf("empty array of tables %s", p)
 			}
 			t = x[len(x)-1]
 		case nil:
@@ -116,7 +116,7 @@ func walk(root *Table, name string, _ bool) (*Table, string, error) {
 			t.set(p, nt)
 			t = nt
 		default:
-			return nil, "", fmt.Errorf("%s — не таблица", p)
+			return nil, "", fmt.Errorf("%s is not a table", p)
 		}
 	}
 	return t, unquoteKey(strings.TrimSpace(parts[len(parts)-1])), nil
@@ -171,7 +171,7 @@ func Balanced(s string) bool {
 func parseValue(s string) (any, string, error) {
 	s = strings.TrimLeft(s, " \t")
 	if s == "" {
-		return nil, "", fmt.Errorf("пустое значение")
+		return nil, "", fmt.Errorf("empty value")
 	}
 	switch s[0] {
 	case '"':
@@ -214,11 +214,11 @@ func parseValue(s string) (any, string, error) {
 			}
 			b.WriteByte(c)
 		}
-		return nil, "", fmt.Errorf("незакрытая строка")
+		return nil, "", fmt.Errorf("unclosed string")
 	case '\'':
 		j := strings.IndexByte(s[1:], '\'')
 		if j < 0 {
-			return nil, "", fmt.Errorf("незакрытая строка")
+			return nil, "", fmt.Errorf("unclosed string")
 		}
 		return s[1 : 1+j], s[2+j:], nil
 	case '[':
@@ -230,7 +230,7 @@ func parseValue(s string) (any, string, error) {
 				return arr, rest[1:], nil
 			}
 			if rest == "" {
-				return nil, "", fmt.Errorf("незакрытый массив")
+				return nil, "", fmt.Errorf("unclosed array")
 			}
 			v, r, err := parseValue(rest)
 			if err != nil {
@@ -261,5 +261,5 @@ func parseValue(s string) (any, string, error) {
 	if f, err := strconv.ParseFloat(clean, 64); err == nil {
 		return Num{f, false}, rest, nil
 	}
-	return nil, "", fmt.Errorf("не понимаю значение %q", tok)
+	return nil, "", fmt.Errorf("cannot understand value %q", tok)
 }

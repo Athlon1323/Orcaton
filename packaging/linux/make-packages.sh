@@ -7,7 +7,7 @@ NFPM_SHA_x86_64=9170d25ea056d7329def38134b2bcad98d02d221f8331610dcd619e84d28c565
 NFPM_SHA_arm64=7871d72bb1035924eab56031f962ae3f004b1f7695151789ef018bdbc507a2fa
 die() { echo "!! $*" >&2; exit 1; }
 export GOTOOLCHAIN=go1.25.14
-[ "$(id -u)" != 0 ] || die "запускайте без sudo: bash packaging/linux/make-packages.sh — пароль для пакетов ОС скрипт спросит сам (иначе инструменты встанут в /root, а файлы проекта станут принадлежать root)"
+[ "$(id -u)" != 0 ] || die "run without sudo: bash packaging/linux/make-packages.sh — the script asks for the OS package password itself (otherwise tools land in /root and project files become owned by root)"
 build=1; setup=1; release=1; kinds=(deb rpm)
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -15,36 +15,36 @@ while [ $# -gt 0 ]; do
         --no-setup) setup=0 ;;
         --deb) kinds=(deb) ;;
         --rpm) kinds=(rpm) ;;
-        --release) shift; release="${1:-}"; [[ "$release" =~ ^[1-9][0-9]*$ ]] || die "--release: нужно целое число ≥ 1" ;;
-        *) die "неизвестный ключ: $1" ;;
+        --release) shift; release="${1:-}"; [[ "$release" =~ ^[1-9][0-9]*$ ]] || die "--release: an integer >= 1 is required" ;;
+        *) die "unknown option: $1" ;;
     esac
     shift
 done
-[ "$(uname -s)" = Linux ] || die "make-packages.sh — только на Linux"
-for c in curl tar sha256sum; do command -v "$c" >/dev/null || die "не найдено: $c"; done
+[ "$(uname -s)" = Linux ] || die "make-packages.sh runs on Linux only"
+for c in curl tar sha256sum; do command -v "$c" >/dev/null || die "not found: $c"; done
 version="$(tr -d ' \r\n' < "$root/VERSION")"
 case "$(uname -m)" in
     x86_64|amd64) arch=amd64; narch=x86_64; nsha=$NFPM_SHA_x86_64 ;;
     aarch64|arm64) arch=arm64; narch=arm64; nsha=$NFPM_SHA_arm64 ;;
-    *) die "архитектура $(uname -m) не поддерживается" ;;
+    *) die "architecture $(uname -m) is not supported" ;;
 esac
-echo "Orcaton $version-$release, пакеты: ${kinds[*]} ($arch)"
+echo "Orcaton $version-$release, packages: ${kinds[*]} ($arch)"
 glibc="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
 case "$glibc" in
     2.3[0-5]|2.2*) ;;
-    *) echo "Внимание: glibc этой системы $glibc новее 2.35 (Ubuntu 22.04). Какая glibc нужна самому пакету — строка «glibc» в проверке"
-       echo "         ниже: ≤ 2.35 — пакет подходит и для Ubuntu 22.04 / 24.04, Debian 12; выше — только для систем с ней и новее" ;;
+    *) echo "Warning: this system's glibc $glibc is newer than 2.35 (Ubuntu 22.04). The glibc the package actually needs is the \"glibc\" line in the check"
+       echo "         below: <= 2.35 — the package also fits Ubuntu 22.04 / 24.04, Debian 12; higher — only systems with that glibc or newer" ;;
 esac
 
 if [ "$build" = 1 ]; then
     if ! bash "$here/setup-build.sh" --check >/dev/null 2>&1; then
         if [ "$setup" = 1 ]; then bash "$here/setup-build.sh"
-        else bash "$here/setup-build.sh" --check || true; die "не хватает инструментов сборки — запустите без --no-setup"; fi
+        else bash "$here/setup-build.sh" --check || true; die "build tools are missing — run without --no-setup"; fi
     fi
     bash "$root/app-gui/scripts/build-gui.sh"
 fi
 bin="$root/app-gui/build/bin"
-for f in orcaton-gui orcaton; do [ -x "$bin/$f" ] || die "нет $bin/$f — запустите без --no-build"; done
+for f in orcaton-gui orcaton; do [ -x "$bin/$f" ] || die "no $bin/$f — run without --no-build"; done
 
 nfpm="${NFPM:-}"
 if [ -z "$nfpm" ]; then
@@ -52,16 +52,16 @@ if [ -z "$nfpm" ]; then
     nfpm="$tools/nfpm"
     if [ ! -x "$nfpm" ]; then
         url="https://github.com/goreleaser/nfpm/releases/download/v$NFPM_VERSION/nfpm_${NFPM_VERSION}_Linux_${narch}.tar.gz"
-        echo "Скачиваю nfpm $NFPM_VERSION: $url"
+        echo "Downloading nfpm $NFPM_VERSION: $url"
         tmp="$(mktemp -d)"
-        curl -fsSL -o "$tmp/nfpm.tar.gz" "$url" || { rm -rf "$tmp"; die "не удалось скачать nfpm (нет сети?)"; }
-        echo "$nsha  $tmp/nfpm.tar.gz" | sha256sum -c --quiet - || { rm -rf "$tmp"; die "nfpm: контрольная сумма не совпала — файл не используется"; }
+        curl -fsSL -o "$tmp/nfpm.tar.gz" "$url" || { rm -rf "$tmp"; die "failed to download nfpm (no network?)"; }
+        echo "$nsha  $tmp/nfpm.tar.gz" | sha256sum -c --quiet - || { rm -rf "$tmp"; die "nfpm: checksum mismatch — the file is not used"; }
         mkdir -p "$tools"
         tar -xzf "$tmp/nfpm.tar.gz" -C "$tools" nfpm LICENSE.md
         rm -rf "$tmp"
     fi
 fi
-[ -x "$nfpm" ] || die "nfpm не найден: $nfpm"
+[ -x "$nfpm" ] || die "nfpm not found: $nfpm"
 
 export ORCATON_VERSION="$version" ORCATON_ARCH="$arch" ORCATON_RELEASE="$release"
 cd "$root"
@@ -73,13 +73,13 @@ for k in "${kinds[@]}"; do
     esac
     rm -f "$pkg" "$pkg.sha256"
     "$nfpm" package --config packaging/linux/nfpm.yaml --packager "$k" --target "$bin/" >/dev/null
-    [ -f "$pkg" ] || die "nfpm не создал $pkg"
+    [ -f "$pkg" ] || die "nfpm did not create $pkg"
     (cd "$bin" && sha256sum "$(basename "$pkg")" > "$(basename "$pkg").sha256")
-    echo "Собрано: $pkg"
+    echo "Built: $pkg"
     pkgs+=("$pkg")
 done
 bash "$here/check-packages.sh" "${pkgs[@]}"
 echo
-echo "Установка: Ubuntu / Debian — sudo apt install ./<файл>.deb; Fedora — sudo dnf install ./<файл>.rpm"
-[ -f "$here/test-package.sh" ] && echo "Проверка установки и удаления на тестовой машине: bash packaging/linux/test-package.sh <файл>"
+echo "Install: Ubuntu / Debian — sudo apt install ./<file>.deb; Fedora — sudo dnf install ./<file>.rpm"
+[ -f "$here/test-package.sh" ] && echo "Install and removal check on a test machine: bash packaging/linux/test-package.sh <file>"
 exit 0

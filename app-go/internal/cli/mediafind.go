@@ -27,11 +27,11 @@ func isTerminal(f *os.File) bool {
 
 var (
 	searchOpt = opt{names: []string{"--search"}, kind: kList,
-		help: "Папка, где искать недостающие медиа по имени файла (как --map ПАПКА); можно несколько раз"}
+		help: "Folder to search for missing media by file name (like --map FOLDER); can be repeated"}
 	depthOpt = opt{names: []string{"--search-depth"}, kind: kInt, def: media.DefaultSearchDepth, min: bound(0), max: bound(64),
-		help: "Глубина поиска в подпапках"}
+		help: "Search depth in subfolders"}
 	yesOpt = opt{names: []string{"--yes", "-y"}, kind: kBool, def: false,
-		help: "Не спрашивать: ненайденные файлы — сразу в конец таймлайна (нет на диске)"}
+		help: "Do not ask: files not found go straight to the end of the timeline (offline)"}
 )
 
 func trimPath(s string) string {
@@ -103,18 +103,18 @@ func searchDepth(c *ctx) int {
 func printSearch(c *ctx, r app.SearchReport) {
 	for _, b := range r.BadRoots {
 		if r.Answer {
-			c.eprintf("Папка не найдена: %s\n", b)
+			c.eprintf("Folder not found: %s\n", b)
 		} else {
-			c.eprintf("Папка для поиска не найдена: %s\n", b)
+			c.eprintf("Search folder not found: %s\n", b)
 		}
 	}
 	if len(r.Roots) == 0 || r.Before == 0 {
 		return
 	}
-	c.eprintf("Поиск медиа (%s): найдено %d из %d недостающих\n",
+	c.eprintf("Media search (%s): found %d of %d missing\n",
 		strings.Join(r.Roots, "; "), r.Found, r.Before)
 	for _, a := range r.Ambiguous {
-		c.eprintf("  %s — несколько одинаковых файлов, не выбран: %s\n",
+		c.eprintf("  %s — several identical files, none chosen: %s\n",
 			formats.BaseName(*a.Media.Path), strings.Join(a.Candidates[:min(3, len(a.Candidates))], " | "))
 	}
 }
@@ -124,7 +124,7 @@ func listMissing(c *ctx, missing []*core.MediaRef) {
 		c.eprintf("  %s   (%s)\n", formats.BaseName(*m.Path), origOf(m))
 	}
 	if len(missing) > promptMax {
-		c.eprintf("  … и ещё %d\n", len(missing)-promptMax)
+		c.eprintf("  … and %d more\n", len(missing)-promptMax)
 	}
 }
 
@@ -139,11 +139,11 @@ func (a *termAsker) AskMissing(_ context.Context, missing []*core.MediaRef) (app
 	c := a.c
 	a.asked = true
 	if len(missing) != a.shown {
-		c.eprintf("\nНе найдено на диске: %d файл(ов):\n", len(missing))
+		c.eprintf("\nNot found on disk: %d file(s):\n", len(missing))
 		listMissing(c, missing)
-		c.eprintf("Укажите папку, где они могут быть (поиск по имени во вложенных папках),\n" +
-			"Enter — пропустить (встанут в конец таймлайна как отсутствующие, в монтажной программе — офлайн), " +
-			"q — отменить:\n")
+		c.eprintf("Enter a folder where they may be (search by name in subfolders),\n" +
+			"Enter — skip (they go to the end of the timeline as missing, offline in the editing program), " +
+			"q — cancel:\n")
 		a.shown = len(missing)
 	}
 	c.eprintf("> ")
@@ -153,12 +153,12 @@ func (a *termAsker) AskMissing(_ context.Context, missing []*core.MediaRef) (app
 		if err != nil {
 			c.eprintf("\n")
 		}
-		c.eprintf("Пропущено: %d файл(ов) — в конец таймлайна (нет на диске)\n", len(missing))
+		c.eprintf("Skipped: %d file(s) — to the end of the timeline (offline)\n", len(missing))
 		return app.Answer{Action: app.AnswerSkip}, nil
 	}
 	switch strings.ToLower(ans) {
 	case "q", "й", "quit", "exit":
-		c.eprintf("Отменено\n")
+		c.eprintf("Cancelled\n")
 		return app.Answer{Action: app.AnswerCancel}, nil
 	}
 	return app.Answer{Action: app.AnswerFolder, Folder: ans}, nil
@@ -183,11 +183,11 @@ func findMissingMedia(c *ctx, p *core.Project) (cancelled bool) {
 	}
 	switch {
 	case len(missing) > 0 && !quiet && !interactive:
-		c.eprintf("Не найдено на диске: %d файл(ов) — встанут в конец таймлайна как отсутствующие "+
-			"(в монтажной программе — офлайн). Папка с исходниками: --map \"ПАПКА\"\n", len(missing))
+		c.eprintf("Not found on disk: %d file(s) — they go to the end of the timeline as missing "+
+			"(offline in the editing program). Folder with sources: --map \"FOLDER\"\n", len(missing))
 		listMissing(c, missing)
 	case len(missing) == 0 && asker != nil && asker.asked:
-		c.eprintf("Все файлы найдены\n")
+		c.eprintf("All files found\n")
 	}
 	return false
 }

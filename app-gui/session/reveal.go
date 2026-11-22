@@ -1,6 +1,6 @@
 package session
 
-import "path/filepath"
+import posixpath "path"
 
 func RevealCommand(goos, path string) (string, []string) {
 	switch goos {
@@ -9,7 +9,7 @@ func RevealCommand(goos, path string) (string, []string) {
 	case "darwin":
 		return "open", []string{"-R", path}
 	default:
-		return "xdg-open", []string{filepath.Dir(path)}
+		return "xdg-open", []string{posixpath.Dir(path)}
 	}
 }
 

@@ -113,7 +113,7 @@ func contains(xs []string, s string) bool {
 	return false
 }
 
-var ErrNoRoot = errors.New("нет корневого элемента")
+var ErrNoRoot = errors.New("no root element")
 
 func Parse(data []byte, strict bool) (*Node, error) {
 	d := xml.NewDecoder(bytes.NewReader(data))

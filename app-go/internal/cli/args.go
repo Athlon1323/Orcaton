@@ -238,7 +238,7 @@ func usageLine(prog string, cmd *command) string {
 
 func printHelp(w io.Writer, prog string, cmd *command) {
 	if cmd.group != nil {
-		fmt.Fprintf(w, "Usage: %s [OPTIONS] COMMAND [ARGS]...\n\n  %s\n\nКоманды:\n", prog, cmd.help)
+		fmt.Fprintf(w, "Usage: %s [OPTIONS] COMMAND [ARGS]...\n\n  %s\n\nCommands:\n", prog, cmd.help)
 		names := cmd.order
 		if names == nil {
 			for n := range cmd.group {
@@ -249,7 +249,7 @@ func printHelp(w io.Writer, prog string, cmd *command) {
 		for _, n := range names {
 			mark := ""
 			if n == cmd.deflt {
-				mark = " (по умолчанию)"
+				mark = " (default)"
 			}
 			fmt.Fprintf(w, "  %-18s %s%s\n", n, firstLine(cmd.group[n].help), mark)
 		}
@@ -258,12 +258,12 @@ func printHelp(w io.Writer, prog string, cmd *command) {
 	fmt.Fprintln(w, usageLine(prog, cmd))
 	fmt.Fprintf(w, "\n  %s\n", cmd.help)
 	if len(cmd.args) > 0 {
-		fmt.Fprintln(w, "\nАргументы:")
+		fmt.Fprintln(w, "\nArguments:")
 		for _, a := range cmd.args {
 			fmt.Fprintf(w, "  %-28s %s\n", strings.ToUpper(a.name), a.help)
 		}
 	}
-	fmt.Fprintln(w, "\nОпции:")
+	fmt.Fprintln(w, "\nOptions:")
 	for _, o := range cmd.opts {
 		n := strings.Join(o.names, ", ")
 		if o.neg != "" {
@@ -283,12 +283,12 @@ func printHelp(w io.Writer, prog string, cmd *command) {
 		def := ""
 		if o.def != nil && o.kind != kList {
 			if b, ok := o.def.(bool); !ok || b {
-				def = fmt.Sprintf(" [по умолчанию: %v]", o.def)
+				def = fmt.Sprintf(" [default: %v]", o.def)
 			}
 		}
 		fmt.Fprintf(w, "  %-28s %s%s\n", n, o.help, def)
 	}
-	fmt.Fprintf(w, "  %-28s %s\n", "--help", "Показать эту справку")
+	fmt.Fprintf(w, "  %-28s %s\n", "--help", "Show this help")
 }
 
 func firstLine(s string) string {

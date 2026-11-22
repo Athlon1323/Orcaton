@@ -75,7 +75,7 @@ func (r *CleanResult) AsDict() *pyio.OMap {
 func ParseAge(text string) (float64, error) {
 	m := ageRe.FindStringSubmatch(strings.ToLower(text))
 	if m == nil {
-		return 0, fmt.Errorf("Не понимаю срок '%s': ожидается, например, 30d, 12h, 2w", text)
+		return 0, fmt.Errorf("Cannot parse age '%s': expected e.g. 30d, 12h, 2w", text)
 	}
 	v, _ := strconv.ParseFloat(m[1], 64)
 	u := m[2]
@@ -197,14 +197,14 @@ func Prune(path string, olderThanSec float64, dryRun bool, now float64) *CleanRe
 
 func HumanBytes(n int64) string {
 	size := float64(n)
-	for _, unit := range []string{"Б", "КБ", "МБ", "ГБ"} {
-		if size < 1024 || unit == "ГБ" {
-			if unit == "Б" {
+	for _, unit := range []string{"B", "KB", "MB", "GB"} {
+		if size < 1024 || unit == "GB" {
+			if unit == "B" {
 				return strconv.FormatFloat(size, 'f', 0, 64) + " " + unit
 			}
 			return strconv.FormatFloat(size, 'f', 1, 64) + " " + unit
 		}
 		size /= 1024
 	}
-	return fmt.Sprintf("%d Б", n)
+	return fmt.Sprintf("%d B", n)
 }

@@ -10,7 +10,7 @@ import (
 	"orcaton/internal/pyio"
 )
 
-const Version = "0.0.46"
+const Version = "0.0.47"
 
 type Partner struct {
 	Name               string
@@ -51,7 +51,7 @@ func ReportOrder(r *engine.Report) []*engine.Unit {
 
 func Reason(u *engine.Unit) string {
 	if u.Status == core.StatusByTimecode {
-		return "по часам камеры (звук не подтвердил)"
+		return "by camera clock (audio did not confirm)"
 	}
 	if u.Error != nil {
 		return *u.Error

@@ -100,10 +100,10 @@ func ffmpegFail(c *ctx, err error) int {
 		return 3
 	}
 	if app.KindOf(err) == app.KindCancelled {
-		c.println("Отменено")
+		c.println("Cancelled")
 		return 130
 	}
-	c.printf("Ошибка: %v\n", err)
+	c.printf("Error: %v\n", err)
 	return 1
 }
 

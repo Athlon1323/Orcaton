@@ -28,7 +28,7 @@ func LoadLenientXML(data []byte) (*xmldom.Node, error) {
 	fixed := nsFix.ReplaceAll(data, []byte("<${1}${2}__${3}"))
 	root, err := xmldom.Parse(fixed, false)
 	if err != nil {
-		return nil, formats.Errorf("Не удалось разобрать XML внутри DRT")
+		return nil, formats.Errorf("Could not parse the XML inside the DRT")
 	}
 	return root, nil
 }
@@ -116,7 +116,7 @@ func (imp Importer) Read(path string) (*core.Project, error) {
 func (imp Importer) ReadData(data []byte, path string) (*core.Project, error) {
 	z, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil || !hasDrtEntries(z.File) {
-		return nil, formats.Errorf("%s: не похоже на .drt (нет project.xml / SeqContainer/)", path)
+		return nil, formats.Errorf("%s: does not look like a .drt (no project.xml / SeqContainer/)", path)
 	}
 	byName := map[string]*zip.File{}
 	for _, f := range z.File {
@@ -219,7 +219,7 @@ func (imp Importer) ReadData(data []byte, path string) (*core.Project, error) {
 		p.Sequences = append(p.Sequences, seq)
 	}
 	if len(p.Sequences) == 0 {
-		return nil, formats.Errorf("%s: в DRT нет ни одной секвенции (SeqContainer/*.xml)", path)
+		return nil, formats.Errorf("%s: the DRT has no sequence (SeqContainer/*.xml)", path)
 	}
 	return p, nil
 }

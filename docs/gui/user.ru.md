@@ -4,7 +4,7 @@
 
 > **Статус: альфа.** Окно уже работает: открыть таймлайн → найти медиа →
 > синхронизировать → сохранить. Пометка *(позже)* — то, чего в окне пока нет. Всё то же самое делает
-> терминал — [docs/go/usage.md](../go/usage.md). **Терминал остаётся**: окно и `orcaton sync` работают
+> терминал — [docs/go/usage.ru.md](../go/usage.ru.md). **Терминал остаётся**: окно и `orcaton sync` работают
 > на одном ядре и дают одинаковый результат.
 
 ## Как открыть окно
@@ -163,7 +163,7 @@ bash scripts/install.sh --run                                        # macOS, Ub
 | Сохранить отчёт | `--report` | для `.drt` — всегда |
 
 Настройки окна и терминала — общие: файл `orcaton.toml` пользователя и рядом с таймлайном
-([usage.md](../go/usage.md#файл-настроек-orcatontoml)); что изменено в окне, действует и в `orcaton sync`.
+([usage.ru.md](../go/usage.ru.md#файл-настроек-orcatontoml)); что изменено в окне, действует и в `orcaton sync`.
 Язык окна — не настройка терминала: он хранится в `gui.json`.
 
 ## О программе и «Для разработчика»
@@ -175,7 +175,7 @@ bash scripts/install.sh --run                                        # macOS, Ub
   (`%LocalAppData%\orcaton\logs`), кэш.
 
 ## Только в терминале
-`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` для скриптов — [docs/go/usage.md](../go/usage.md).
+`inspect`, `clips`, `convert`, `probe`, `offset`, `config`, `cache`, `--json` / `--progress json` для скриптов — [docs/go/usage.ru.md](../go/usage.ru.md).
 
 ## Вопросы
 **Окно пишет «FFmpeg не установлен».** Orcaton читает звук через FFmpeg — бесплатную программу, которая
